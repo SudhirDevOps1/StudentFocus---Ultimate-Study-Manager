@@ -1907,6 +1907,44 @@
       color: var(--text-light);
       font-style: italic;
     }
+
+    /* Note Colors */
+    .color-1 {
+      background: #fee2e2;
+      border-left: 5px solid #ef4444;
+    }
+
+    /* Red */
+    .color-2 {
+      background: #fef3c7;
+      border-left: 5px solid #f59e0b;
+    }
+
+    /* Yellow */
+    .color-3 {
+      background: #d1fae5;
+      border-left: 5px solid #10b981;
+    }
+
+    /* Green */
+    .color-4 {
+      background: #dbeafe;
+      border-left: 5px solid #3b82f6;
+    }
+
+    /* Blue */
+    .color-5 {
+      background: #f3e8ff;
+      border-left: 5px solid #a855f7;
+    }
+
+    /* Purple */
+
+    /* Draggable Elements */
+    .pip-header,
+    .music-header {
+      cursor: move;
+    }
   </style>
 </head>
 
@@ -4654,6 +4692,8 @@
       });
     }
 
+    let audioErrorCount = 0; // Track consecutive audio errors to prevent infinite loop
+
     // Play the track
     function playTrack() {
       console.log("Attempting to play track...");
@@ -4667,13 +4707,23 @@
         .then(() => {
           console.log("Audio playing successfully");
           isPlaying = true;
+          audioErrorCount = 0; // Reset error count on success
           playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         })
         .catch((error) => {
           console.error("Error playing audio:", error);
-          showToast(`Error playing audio: ${error.message}`, "error");
-          // Try to load a different track
-          nextTrack();
+          audioErrorCount++;
+
+          // Only try next track if we haven't exhausted all tracks
+          if (audioErrorCount < musicTracks.length) {
+            showToast(`Track failed, trying next...`, "warning");
+            nextTrack();
+          } else {
+            // All tracks failed - stop trying
+            showToast("All music tracks failed to load. Please add valid MP3 files to the music folder.", "error");
+            isPlaying = false;
+            audioErrorCount = 0; // Reset for future attempts
+          }
         });
     }
 
@@ -5147,6 +5197,72 @@
     }
 
     // Initialize hard mode toggle
+    document.addEventListener("DOMContentLoaded", addHardModeToggle);
+
+
+    // =============================================
+    // 🖱️ DRAGGABLE LOGIC & UTILS
+    // =============================================
+    function makeDraggable(element, handle) {
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      if (!handle) return;
+
+      handle.onmousedown = dragMouseDown;
+
+      function dragMouseDown(e) {
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        // Ensure element stays within viewport
+        const top = element.offsetTop - pos2;
+        const left = element.offsetLeft - pos1;
+
+        // Basic boundary checks (optional, but good for UX)
+        // element.style.top = Math.max(0, Math.min(window.innerHeight - element.offsetHeight, top)) + "px";
+        // element.style.left = Math.max(0, Math.min(window.innerWidth - element.offsetWidth, left)) + "px";
+
+        element.style.top = top + "px";
+        element.style.left = left + "px";
+      }
+
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
+    }
+
+    // Initialize Draggable Elements on Load
+    document.addEventListener("DOMContentLoaded", () => {
+      // Make PiP Window Draggable (YouTube style)
+      const pipWindow = document.getElementById("pip-window");
+      const pipHeader = document.querySelector("#pip-window .pip-header");
+      if (pipWindow && pipHeader) {
+        makeDraggable(pipWindow, pipHeader);
+      }
+
+      // Make Music Player Draggable
+      const playerWindow = document.getElementById("music-player");
+      const playerHeader = document.querySelector("#music-player .music-header");
+      if (playerWindow && playerHeader) {
+        makeDraggable(playerWindow, playerHeader);
+      }
+
+      // Ensure "Completed" tab works and maybe auto-switch if user is confused?
+      // For now, trust the tabs but maybe log basic stats
+      console.log("App initialized. Ready.");
+    });
+
     document.addEventListener("DOMContentLoaded", addHardModeToggle);
   </script>
 </body>
