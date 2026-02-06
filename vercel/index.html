@@ -5389,38 +5389,38 @@
     const musicTracks = [
       {
         id: 1,
-        title: "Focus Flow",
-        artist: "StudentFocus",
-        src: "music/under/focus-flow.mp3",
-        duration: "6:12",
+        title: "Rainy Mood",
+        artist: "Nature Sounds",
+        src: "https://cdn.freesound.org/previews/531/531947_10356620-lq.mp3",
+        duration: "7:00",
       },
       {
         id: 2,
-        title: "Deep Concentration",
-        artist: "StudentFocus",
-        src: "music/under/deep-concentration.mp3",
-        duration: "7:05",
-      },
-      {
-        id: 3,
-        title: "Calming Mind",
-        artist: "StudentFocus",
-        src: "music/under/calming-mind.mp3",
+        title: "Forest Walk",
+        artist: "Nature Sounds",
+        src: "https://cdn.freesound.org/previews/610/610702_5674468-lq.mp3",
         duration: "5:44",
       },
       {
-        id: 4,
-        title: "Productive Pulse",
-        artist: "StudentFocus",
-        src: "music/under/productive-pulse.mp3",
+        id: 3,
+        title: "Cafe Ambience",
+        artist: "Ambience",
+        src: "https://cdn.freesound.org/previews/463/463836_9497060-lq.mp3",
         duration: "5:02",
       },
       {
-        id: 5,
-        title: "Silent Study",
-        artist: "StudentFocus",
-        src: "music/under/silent-study.mp3",
+        id: 4,
+        title: "Ocean Waves",
+        artist: "Nature Sounds",
+        src: "https://cdn.freesound.org/previews/527/527604_2193266-lq.mp3",
         duration: "5:53",
+      },
+      {
+        id: 5,
+        title: "White Noise",
+        artist: "Relaxation",
+        src: "https://cdn.freesound.org/previews/389/389646_7233816-lq.mp3",
+        duration: "10:00",
       },
     ];
 
@@ -5861,325 +5861,7 @@
       setTimeout(checkUpcomingTasks, 2000); // Wait a bit for data to load
     }
 
-    // Utility function to format dates
-    function formatDate(date) {
-      if (!(date instanceof Date)) {
-        date = new Date(date);
-      }
-      return date.toLocaleDateString();
-    }
-
-    // =============================================
-    // 📊 ADVANCED ANALYTICS
-    // =============================================
-
-    // Generate a CSS Conic Gradient Pie Chart
-    function createSubjectDistributionChart() {
-      // Calculate data from tasks and grades
-      const subjectTimeMap = {};
-      let totalTime = 0;
-
-      // Use tasks for estimated time data
-      if (tasks && tasks.length > 0) {
-        tasks.forEach((task) => {
-          if (task.completed) {
-            const time = task.estimated || 30; // Default 30 mins if not specified
-            subjectTimeMap[task.subject] =
-              (subjectTimeMap[task.subject] || 0) + time;
-            totalTime += time;
-          }
-        });
-      }
-
-      // If no data, show placeholder
-      if (totalTime === 0) {
-        updateSubjectDistributionUI({}, 0);
-        return;
-      }
-
-      updateSubjectDistributionUI(subjectTimeMap, totalTime);
-    }
-
-    // Update UI with subject distribution info and Pie Chart
-    function updateSubjectDistributionUI(data, total) {
-      let analyticsSection = document.querySelector(".analytics-section");
-      if (!analyticsSection) {
-        analyticsSection = document.createElement("div");
-        analyticsSection.className = "analytics-section";
-        analyticsSection.innerHTML = `
-          <h3>📊 Subject Distribution</h3>
-          <div class="chart-flex-container">
-            <div id="subject-pie-chart" class="pie-chart"></div>
-            <div id="subject-legend" class="chart-legend"></div>
-          </div>
-          <h3>🌡️ Activity Heatmap</h3>
-          <div id="activity-heatmap" class="heatmap-container"></div>
-        `;
-
-        const dashboardContainer = document.querySelector(
-          ".dashboard-container",
-        );
-        if (dashboardContainer)
-          document
-            .querySelector(".content-wrapper")
-            .appendChild(analyticsSection);
-      }
-
-      const pieChart = document.getElementById("subject-pie-chart");
-      const legend = document.getElementById("subject-legend");
-
-      if (!pieChart || !legend) return;
-
-      if (total === 0) {
-        pieChart.style.background = "#e0e0e0";
-        legend.innerHTML =
-          "<p>No data yet. Complete tasks to see analytics!</p>";
-        return;
-      }
-
-      // Generate Gradient String
-      let gradientParts = [];
-      let currentDeg = 0;
-      const colors = [
-        "#FF6384",
-        "#36A2EB",
-        "#FFCE56",
-        "#4BC0C0",
-        "#9966FF",
-        "#FF9F40",
-      ];
-
-      let colorIndex = 0;
-      let legendHtml = "";
-
-      Object.entries(data).forEach(([subject, time]) => {
-        const percentage = (time / total) * 100;
-        const deg = (percentage / 100) * 360;
-        const color = colors[colorIndex % colors.length];
-
-        gradientParts.push(
-          `${color} ${currentDeg}deg ${currentDeg + deg}deg`,
-        );
-        currentDeg += deg;
-
-        legendHtml += `
-          <div class="legend-item">
-            <span class="legend-color" style="background:${color}"></span>
-            <span class="legend-text">${subject} (${Math.round(percentage)}%)</span>
-          </div>
-        `;
-        colorIndex++;
-      });
-
-      pieChart.style.background = `conic-gradient(${gradientParts.join(", ")})`;
-      legend.innerHTML = legendHtml;
-
-      // Update Heatmap
-      updateActivityHeatmap();
-    }
-
-    // Create GitHub-style activity heatmap
-    function updateActivityHeatmap() {
-      const heatmapContainer = document.getElementById("activity-heatmap");
-      if (!heatmapContainer) return;
-
-      // Generate the last 4 weeks of data (simulation based on studyData)
-      let html = '<div class="heatmap-grid">';
-
-      // Headers
-      const days = ["S", "M", "T", "W", "T", "F", "S"];
-      days.forEach((d) => (html += `<div class="heatmap-header">${d}</div>`));
-
-      // Calculate dates
-      // We will show 28 days (4 weeks)
-      // Map studyData.weekly to the current week
-      const today = new Date();
-      const dayOfWeek = today.getDay(); // 0-6
-
-      // Create a flat array of intensity levels (0-3)
-      // Historical data would come from DB, here we simulate mostly empty for past weeks + current week data
-      let intensityData = Array(28).fill(0);
-
-      // Fill current week based on studyData.weekly
-      // week starts Sunday(0). studyData.weekly indexes 0-6 correspond to Sun-Sat
-      // We need to place them in the last row of our 4 week grid (indices 21-27)
-      studyData.weekly.forEach((mins, idx) => {
-        let intensity = 0;
-        if (mins > 120) intensity = 3;
-        else if (mins > 60) intensity = 2;
-        else if (mins > 0) intensity = 1;
-
-        // idx is 0(Sun) to 6(Sat)
-        // We want to fill the correct slot based on "current week".
-        // Simplification: Just fill the last 7 slots with this week's data order
-        intensityData[21 + idx] = intensity;
-      });
-
-      // Render cells
-      intensityData.forEach((level) => {
-        let colorClass = "intensity-0";
-        if (level === 1) colorClass = "intensity-1";
-        if (level === 2) colorClass = "intensity-2";
-        if (level === 3) colorClass = "intensity-3";
-
-        html += `<div class="heatmap-cell ${colorClass}" title="Study level: ${level}"></div>`;
-      });
-
-      html += "</div>";
-      heatmapContainer.innerHTML = html;
-    }
-
-    // =============================================
-    // 📅 INTERACTIVE CALENDAR
-    // =============================================
-    let currentCalendarDate = new Date();
-    let selectedDate = new Date();
-
-    function initCalendar() {
-      // Event Listeners
-      document
-        .getElementById("prev-month")
-        .addEventListener("click", () => changeMonth(-1));
-      document
-        .getElementById("next-month")
-        .addEventListener("click", () => changeMonth(1));
-
-      renderCalendar();
-    }
-
-    function changeMonth(delta) {
-      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
-      renderCalendar();
-    }
-
-    function renderCalendar() {
-      const year = currentCalendarDate.getFullYear();
-      const month = currentCalendarDate.getMonth();
-
-      // Update Header
-      const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
-      document.getElementById("calendar-month-year").textContent =
-        `${monthNames[month]} ${year}`;
-
-      const grid = document.getElementById("calendar-grid");
-      grid.innerHTML = "";
-
-      // Calculate days
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const daysInMonth = lastDay.getDate();
-      const startDayOfWeek = firstDay.getDay(); // 0 (Sun) - 6 (Sat)
-
-      // Previous month filler days
-      for (let i = 0; i < startDayOfWeek; i++) {
-        const div = document.createElement("div");
-        div.className = "calendar-day other-month";
-        grid.appendChild(div);
-      }
-
-      // Current month days
-      const today = new Date();
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const div = document.createElement("div");
-        div.className = "calendar-day";
-        div.textContent = day;
-
-        // Highlight Today
-        if (date.toDateString() === today.toDateString()) {
-          div.classList.add("today");
-        }
-
-        // Highlight Selected
-        if (date.toDateString() === selectedDate.toDateString()) {
-          div.classList.add("selected");
-        }
-
-        // Check for tasks on this day
-        const hasTasks = tasks.some((t) => {
-          const taskDate = new Date(t.dueDate);
-          return (
-            !t.completed && taskDate.toDateString() === date.toDateString()
-          );
-        });
-
-        if (hasTasks) {
-          div.classList.add("has-event");
-        }
-
-        div.addEventListener("click", () => {
-          selectedDate = date;
-          renderCalendar(); // re-render to update selected state
-          showTasksForDate(date);
-        });
-
-        grid.appendChild(div);
-      }
-    }
-
-    function showTasksForDate(date) {
-      const list = document.getElementById("calendar-task-list");
-      const dateString = date.toDateString();
-
-      const daysTasks = tasks.filter((t) => {
-        const taskDate = new Date(t.dueDate);
-        return taskDate.toDateString() === dateString;
-      });
-
-      if (daysTasks.length === 0) {
-        list.innerHTML = `<p class="text-muted">No tasks for ${date.toLocaleDateString()}</p>`;
-        return;
-      }
-
-      list.innerHTML =
-        `<h4>Tasks for ${date.toLocaleDateString()}</h4>` +
-        daysTasks
-          .map(
-            (t) => `
-        <div class="task-card small-card ${t.completed ? "completed" : ""}" style="margin-bottom: 8px; padding: 10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center">
-             <span>${t.title}</span>
-             <span class="badge ${t.priority}">${t.priority}</span>
-          </div>
-        </div>
-      `,
-          )
-          .join("");
-    }
-
-    // Call init when tab is switched to calendar
-    // We'll hook into the tab switching logic existing in the app
-    // For now, simpler: auto-init on load
-    document.addEventListener("DOMContentLoaded", initCalendar);
-
-    // Function to generate analytics periodically
-    function generateAnalytics() {
-      createSubjectDistributionChart();
-      updateActivityHeatmap();
-    }
-
-    // Initialize analytics when data is loaded
-    function initAnalytics() {
-      // Set up periodic analytics updates
-      setInterval(generateAnalytics, 30000); // Update every 30 seconds
-    }
-
-    // Initialize analytics when DOM is loaded
-    document.addEventListener("DOMContentLoaded", initAnalytics);
+    // [Removed broken/unused Analytics and Calendar code]
 
     // =============================================
     // 🎯 POMODORO HARD MODE
