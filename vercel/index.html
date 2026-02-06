@@ -2038,6 +2038,12 @@
         <button id="focus-mode-btn" title="Focus Mode">
           <i class="fas fa-bullseye"></i>
         </button>
+        <button id="pip-toggle-btn" title="PiP Mode (Ctrl+P)" onclick="togglePipWindow()">
+          <i class="fas fa-external-link-square-alt"></i>
+        </button>
+        <button id="music-toggle-btn" title="Music Player (Ctrl+M)" onclick="toggleMusicPlayer()">
+          <i class="fas fa-music"></i>
+        </button>
         <button id="theme-toggle" title="Toggle Theme">
           <i class="fas fa-moon"></i>
         </button>
@@ -2638,6 +2644,7 @@
   </div>
 
   <!-- FIREBASE SDK -->
+
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
