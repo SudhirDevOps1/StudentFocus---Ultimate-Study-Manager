@@ -2819,11 +2819,11 @@
         apiKey: "AIzaSyBPpm5ttvLnQ9CcbvlSmd0DrKyxtmlEJJA",
         authDomain: "student-task-app-4d0ef.firebaseapp.com",
         databaseURL:
-          "https://student-task-app-4d0ef-default-rtdb.asia-southeast1.firebasedatabase.app",
+          "https://student-task-app-4d0ef-default-rtdb.firebaseio.com/",
         projectId: "student-task-app-4d0ef",
-        storageBucket: "student-task-app-4d0ef.firebasestorage.app",
-        messagingSenderId: "458507771913",
-        appId: "1:458507771913:web:699328c6aff9a61bba58d8",
+        storageBucket: "student-task-app-4d0ef.appspot.com",
+        messagingSenderId: "433745850777",
+        appId: "1:433745850777:web:26bba58d889802118c5c9d",
       };
 
       firebase.initializeApp(firebaseConfig);
@@ -3471,25 +3471,36 @@
             showToast("Task added! ✅", "success");
             checkAchievements();
           } catch (err) {
-            showToast("Error adding task", "error");
+            console.error("Error adding task:", err);
+            showToast(`Error adding task: ${err.message || 'Unknown error'}`, "error");
           }
         });
 
       window.toggleComplete = async (id, status) => {
-        await db.ref(`tasks/${currentUser.uid}/${id}`).update({
-          completed: !status,
-          completedAt: !status ? Date.now() : null,
-        });
-        if (!status) {
-          showToast("Task completed! 🎉", "success");
-          checkAchievements();
+        try {
+          await db.ref(`tasks/${currentUser.uid}/${id}`).update({
+            completed: !status,
+            completedAt: !status ? Date.now() : null,
+          });
+          if (!status) {
+            showToast("Task completed! 🎉", "success");
+            checkAchievements();
+          }
+        } catch (err) {
+          console.error("Error updating task completion:", err);
+          showToast(`Error updating task: ${err.message || 'Unknown error'}`, "error");
         }
       };
 
       window.deleteTask = async (id) => {
         if (confirm("Delete this task?")) {
-          await db.ref(`tasks/${currentUser.uid}/${id}`).remove();
-          showToast("Task deleted", "success");
+          try {
+            await db.ref(`tasks/${currentUser.uid}/${id}`).remove();
+            showToast("Task deleted", "success");
+          } catch (err) {
+            console.error("Error deleting task:", err);
+            showToast(`Error deleting task: ${err.message || 'Unknown error'}`, "error");
+          }
         }
       };
 
@@ -3548,17 +3559,22 @@
           }
 
           const id = document.getElementById("edit-id").value;
-          await db.ref(`tasks/${currentUser.uid}/${id}`).update({
-            title: document.getElementById("edit-title").value,
-            subject: document.getElementById("edit-subject").value,
-            category: document.getElementById("edit-category").value,
-            priority: document.getElementById("edit-priority").value,
-            dueDate: document.getElementById("edit-due").value,
-            notes: document.getElementById("edit-notes").value,
-            updatedAt: Date.now(),
-          });
-          document.getElementById("edit-modal").classList.add("hidden");
-          showToast("Task updated! ✅", "success");
+          try {
+            await db.ref(`tasks/${currentUser.uid}/${id}`).update({
+              title: document.getElementById("edit-title").value,
+              subject: document.getElementById("edit-subject").value,
+              category: document.getElementById("edit-category").value,
+              priority: document.getElementById("edit-priority").value,
+              dueDate: document.getElementById("edit-due").value,
+              notes: document.getElementById("edit-notes").value,
+              updatedAt: Date.now(),
+            });
+            document.getElementById("edit-modal").classList.add("hidden");
+            showToast("Task updated! ✅", "success");
+          } catch (err) {
+            console.error("Error updating task:", err);
+            showToast(`Error updating task: ${err.message || 'Unknown error'}`, "error");
+          }
         });
 
       document.getElementById("cancel-edit").addEventListener("click", () => {
@@ -3678,17 +3694,27 @@
             type: document.getElementById("grade-type").value,
             createdAt: Date.now(),
           };
-          await db.ref(`grades/${currentUser.uid}`).push(grade);
-          document.getElementById("grade-form").reset();
-          document.getElementById("grade-credits").value = 3;
-          showToast("Grade added! 📊", "success");
-          checkAchievements();
+          try {
+            await db.ref(`grades/${currentUser.uid}`).push(grade);
+            document.getElementById("grade-form").reset();
+            document.getElementById("grade-credits").value = 3;
+            showToast("Grade added! 📊", "success");
+            checkAchievements();
+          } catch (err) {
+            console.error("Error adding grade:", err);
+            showToast(`Error adding grade: ${err.message || 'Unknown error'}`, "error");
+          }
         });
 
       window.deleteGrade = async (id) => {
         if (confirm("Delete this grade?")) {
-          await db.ref(`grades/${currentUser.uid}/${id}`).remove();
-          showToast("Grade deleted", "success");
+          try {
+            await db.ref(`grades/${currentUser.uid}/${id}`).remove();
+            showToast("Grade deleted", "success");
+          } catch (err) {
+            console.error("Error deleting grade:", err);
+            showToast(`Error deleting grade: ${err.message || 'Unknown error'}`, "error");
+          }
         }
       };
 
@@ -3788,17 +3814,27 @@
             color: document.getElementById("note-color").value,
             createdAt: Date.now(),
           };
-          await db.ref(`notes/${currentUser.uid}`).push(note);
-          document.getElementById("note-form").reset();
-          document.getElementById("note-modal").classList.add("hidden");
-          showToast("Note saved! 📝", "success");
-          checkAchievements();
+          try {
+            await db.ref(`notes/${currentUser.uid}`).push(note);
+            document.getElementById("note-form").reset();
+            document.getElementById("note-modal").classList.add("hidden");
+            showToast("Note saved! 📝", "success");
+            checkAchievements();
+          } catch (err) {
+            console.error("Error saving note:", err);
+            showToast(`Error saving note: ${err.message || 'Unknown error'}`, "error");
+          }
         });
 
       window.deleteNote = async (id) => {
         if (confirm("Delete this note?")) {
-          await db.ref(`notes/${currentUser.uid}/${id}`).remove();
-          showToast("Note deleted", "success");
+          try {
+            await db.ref(`notes/${currentUser.uid}/${id}`).remove();
+            showToast("Note deleted", "success");
+          } catch (err) {
+            console.error("Error deleting note:", err);
+            showToast(`Error deleting note: ${err.message || 'Unknown error'}`, "error");
+          }
         }
       };
 
@@ -3867,10 +3903,14 @@
           // Track early bird / night owl
           const hour = new Date().getHours();
           if (hour < 7) {
-            db.ref(`studyData/${currentUser.uid}/earlyBird`).set(true);
+            db.ref(`studyData/${currentUser.uid}/earlyBird`).set(true).catch((err) => {
+              console.error("Error setting early bird achievement:", err);
+            });
           }
           if (hour >= 23) {
-            db.ref(`studyData/${currentUser.uid}/nightOwl`).set(true);
+            db.ref(`studyData/${currentUser.uid}/nightOwl`).set(true).catch((err) => {
+              console.error("Error setting night owl achievement:", err);
+            });
           }
         }
       }
@@ -3893,6 +3933,8 @@
               todayCount: todayPomodoros,
               totalMinutes: totalFocusMinutes,
               lastSession: Date.now(),
+            }).catch((err) => {
+              console.error("Error updating pomodoro stats:", err);
             });
 
             updateStudyData();
@@ -3951,7 +3993,9 @@
           longBreak: parseInt(document.getElementById("long-break").value),
           dailyGoal: parseFloat(document.getElementById("daily-goal").value),
         };
-        db.ref(`settings/${currentUser.uid}`).set(pomodoroSettings);
+        db.ref(`settings/${currentUser.uid}`).set(pomodoroSettings).catch((err) => {
+          console.error("Error saving settings:", err);
+        });
         document.getElementById("daily-goal-display").textContent =
           pomodoroSettings.dailyGoal + "h";
         resetPomodoro();
@@ -3976,7 +4020,9 @@
           studyData.today = 0;
           studyData.lastStudyDate = today;
           todayPomodoros = 0;
-          db.ref(`pomodoroStats/${currentUser.uid}/todayCount`).set(0);
+          db.ref(`pomodoroStats/${currentUser.uid}/todayCount`).set(0).catch((err) => {
+            console.error("Error resetting daily pomodoro count:", err);
+          });
         }
       }
 
@@ -3993,6 +4039,8 @@
             studyData.maxDailyStudy || 0,
             studyData.today,
           ),
+        }).catch((err) => {
+          console.error("Error updating study data:", err);
         });
 
         updateStudyDisplay();
@@ -4033,8 +4081,12 @@
           if (!studyData.streakUpdatedToday) {
             studyData.streak = (studyData.streak || 0) + 1;
             studyData.streakUpdatedToday = true;
-            db.ref(`studyData/${currentUser.uid}/streak`).set(studyData.streak);
-            db.ref(`studyData/${currentUser.uid}/streakUpdatedToday`).set(true);
+            db.ref(`studyData/${currentUser.uid}/streak`).set(studyData.streak).catch((err) => {
+              console.error("Error updating streak:", err);
+            });
+            db.ref(`studyData/${currentUser.uid}/streakUpdatedToday`).set(true).catch((err) => {
+              console.error("Error updating streak status:", err);
+            });
           }
         }
         document.getElementById("streak-count").textContent =
@@ -4090,7 +4142,9 @@
 
         if (newUnlocks.length > 0) {
           unlockedAchievements = [...unlockedAchievements, ...newUnlocks];
-          db.ref(`achievements/${currentUser.uid}`).set(unlockedAchievements);
+          db.ref(`achievements/${currentUser.uid}`).set(unlockedAchievements).catch((err) => {
+            console.error("Error saving achievements:", err);
+          });
           renderAchievements();
         }
       }
