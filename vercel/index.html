@@ -5056,316 +5056,7 @@
       }, 3000);
     }
 
-    // =============================================
-    // 🖼️ PICTURE-IN-PICTURE MODE
-    // =============================================
 
-    // PiP Window State
-    let pipWindowOpen = false;
-    let pipMode = "tasks"; // 'tasks' or 'timer'
-
-    // DOM Elements for PiP
-    const pipWindow = document.getElementById("pip-window");
-    const pipTitle = document.getElementById("pip-title");
-    const pipCloseBtn = document.getElementById("pip-close");
-    const pipMinimizeBtn = document.getElementById("pip-minimize");
-    const pipTaskList = document.getElementById("pip-task-list");
-    const pipPomodoro = document.getElementById("pip-pomodoro");
-    const pipTimer = document.getElementById("pip-timer");
-    const pipStartStopBtn = document.getElementById("pip-start-stop");
-    const pipResetBtn = document.getElementById("pip-reset");
-
-    // Initialize PiP functionality
-    function initializePip() {
-      // Close button
-      pipCloseBtn.addEventListener("click", () => {
-        pipWindow.classList.add("hidden");
-        pipWindowOpen = false;
-      });
-
-      // Minimize button
-      pipMinimizeBtn.addEventListener("click", () => {
-        // For now, just hide the window
-        pipWindow.classList.add("hidden");
-        pipWindowOpen = false;
-      });
-
-      // Toggle between task list and timer
-      document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && e.key === "p") {
-          e.preventDefault();
-          togglePipWindow();
-        }
-      });
-
-      // Timer controls
-      pipStartStopBtn.addEventListener("click", () => {
-        togglePomodoro();
-        pipStartStopBtn.innerHTML = pomodoroRunning
-          ? '<i class="fas fa-pause"></i>'
-          : '<i class="fas fa-play"></i>';
-      });
-
-      pipResetBtn.addEventListener("click", () => {
-        resetPomodoro();
-        updatePipTimerDisplay();
-      });
-
-      // Update PiP timer display when main timer updates
-      setInterval(updatePipTimerDisplay, 1000);
-    }
-
-    // Toggle PiP window visibility (Enhanced with Document PiP API)
-    async function togglePipWindow() {
-      // Check if Document Picture-in-Picture API is supported
-      if ("documentPictureInPicture" in window) {
-        // If PiP window is already open, close it
-        if (window.documentPictureInPicture.window) {
-          window.documentPictureInPicture.window.close();
-          return;
-        }
-
-        try {
-          // Request a new PiP window
-          const pipWin = await window.documentPictureInPicture.requestWindow({
-            width: 300,
-            height: 300,
-          });
-
-          // Copy all style sheets to the new window to maintain look and feel
-          [...document.styleSheets].forEach((styleSheet) => {
-            try {
-              const cssRules = [...styleSheet.cssRules]
-                .map((rule) => rule.cssText)
-                .join("");
-              const style = document.createElement("style");
-              style.textContent = cssRules;
-              pipWin.document.head.appendChild(style);
-            } catch (e) {
-              const link = document.createElement("link");
-              link.rel = "stylesheet";
-              link.type = styleSheet.type;
-              link.media = styleSheet.media;
-              link.href = styleSheet.href;
-              pipWin.document.head.appendChild(link);
-            }
-          });
-
-          // Move the PiP content to the new window
-          const pipContent = document.getElementById("pip-content");
-          pipContent.style.display = "block"; // Ensure it's visible
-          pipWin.document.body.appendChild(pipContent);
-
-          // Update content based on mode
-          updatePipContent();
-
-          // Handle closing the PiP window
-          pipWin.addEventListener("pagehide", (event) => {
-            // Move content back to main window
-            const pipContainer = document.getElementById("pip-window");
-            pipContainer.appendChild(pipContent);
-            pipWindowOpen = false;
-          });
-
-          pipWindowOpen = true;
-        } catch (error) {
-          console.error("Failed to enter Picture-in-Picture mode:", error);
-          showToast("Failed to open floating window", "error");
-        }
-      } else {
-        // Fallback to old "fake" PiP for browsers without API support
-        if (pipWindowOpen) {
-          pipWindow.classList.add("hidden");
-          pipWindowOpen = false;
-        } else {
-          updatePipContent();
-          pipWindow.classList.remove("hidden");
-          pipWindowOpen = true;
-        }
-      }
-    }
-
-    // Update PiP content based on current mode
-    function updatePipContent() {
-      if (pipMode === "tasks") {
-        renderPipTasks();
-        pipTaskList.style.display = "block";
-        pipPomodoro.style.display = "none";
-        // Update title if in DOM-based PiP
-        if (pipTitle) pipTitle.textContent = "Floating Tasks";
-      } else {
-        pipTaskList.style.display = "none";
-        pipPomodoro.style.display = "block";
-        // Update title if in DOM-based PiP
-        if (pipTitle) pipTitle.textContent = "Pomodoro Timer";
-        renderPipTimer();
-      }
-    }
-
-    // Render full timer UI in PiP
-    function renderPipTimer() {
-      if (!pipPomodoro) return;
-
-      const mins = Math.floor(pomodoroSeconds / 60);
-      const secs = pomodoroSeconds % 60;
-      const display = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-
-      const streak = (typeof studyData !== 'undefined' && studyData.streak) || 0;
-
-      pipPomodoro.innerHTML = `
-        <div class="timer-mode-tabs" style="transform: scale(0.9); margin-bottom: 12px; display: flex; justify-content: center; gap: 8px;">
-          <button class="pip-mode-tab ${pomodoroMode === "work" ? "active" : ""}" data-mode="work" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; border: none; background: ${pomodoroMode === "work" ? "var(--primary)" : "var(--bg)"}; color: ${pomodoroMode === "work" ? "white" : "var(--text-light)"}; font-weight: 600; cursor: pointer; transition: all 0.2s;">Focus</button>
-          <button class="pip-mode-tab ${pomodoroMode === "short" ? "active" : ""}" data-mode="short" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; border: none; background: ${pomodoroMode === "short" ? "var(--primary)" : "var(--bg)"}; color: ${pomodoroMode === "short" ? "white" : "var(--text-light)"}; font-weight: 600; cursor: pointer; transition: all 0.2s;">Short Break</button>
-          <button class="pip-mode-tab ${pomodoroMode === "long" ? "active" : ""}" data-mode="long" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; border: none; background: ${pomodoroMode === "long" ? "var(--primary)" : "var(--bg)"}; color: ${pomodoroMode === "long" ? "white" : "var(--text-light)"}; font-weight: 600; cursor: pointer; transition: all 0.2s;">Long Break</button>
-        </div>
-
-        <div class="pip-timer-hero" style="text-align:center; padding: 30px 10px; background: var(--gradient); border-radius: 25px; margin-bottom: 20px; box-shadow: var(--shadow-lg); color: white; position: relative; overflow: hidden;">
-          <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px; font-weight: 700;">
-            ${pomodoroMode === "work" ? "Focus Time" : pomodoroMode === "short" ? "Short Break" : "Long Break"}
-          </div>
-          <div id="pip-large-timer" style="font-size: 4.5rem; font-weight: 900; font-family: 'Inter', sans-serif; letter-spacing: -3px; line-height: 1; margin: 10px 0;">${display}</div>
-          ${typeof hardModeEnabled !== 'undefined' && hardModeEnabled ? '<div style="margin-top:12px; font-size: 0.75rem; background: rgba(0,0,0,0.25); padding: 6px 12px; border-radius: 20px; display: inline-block; font-weight: 600;"><i class="fas fa-lock"></i> HARD MODE ON</div>' : ""}
-        </div>
-
-        <div class="pomodoro-stats" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; background: var(--card-bg); padding: 15px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow);">
-          <div class="pomo-stat" style="text-align: center;">
-            <span style="display: block; font-size: 1.4rem; font-weight: 800; color: var(--primary);">${todayPomodoros}</span>
-            <small style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase; font-weight: 700;">Sessions Today</small>
-          </div>
-          <div class="pomo-stat" style="text-align: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border);">
-            <span style="display: block; font-size: 1.4rem; font-weight: 800; color: var(--primary);">${Math.floor(totalFocusMinutes / 60)}h</span>
-            <small style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase; font-weight: 700;">Focus Time</small>
-          </div>
-          <div class="pomo-stat" style="text-align: center;">
-            <span style="display: block; font-size: 1.4rem; font-weight: 800; color: var(--primary);">${streak}</span>
-            <small style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase; font-weight: 700;">Best Streak</small>
-          </div>
-        </div>
-
-        <div class="pip-controls-bottom" style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
-          <button id="pip-reset" class="btn-icon" style="width: 50px; height: 50px; border-radius: 50%; background: var(--bg); color: var(--text); border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s;">
-            <i class="fas fa-redo"></i>
-          </button>
-          <button id="pip-start-stop" class="btn-icon" style="width: 65px; height: 65px; border-radius: 50%; background: var(--gradient); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.2s;">
-            <i class="fas ${pomodoroRunning ? "fa-pause" : "fa-play"}"></i>
-          </button>
-          <button id="pip-skip" class="btn-icon" style="width: 50px; height: 50px; border-radius: 50%; background: var(--bg); color: var(--text); border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s;">
-            <i class="fas fa-forward"></i>
-          </button>
-        </div>
-      `;
-
-      // Re-attach event listeners
-      const startBtn = pipPomodoro.querySelector("#pip-start-stop");
-      const resetBtn = pipPomodoro.querySelector("#pip-reset");
-      const skipBtn = pipPomodoro.querySelector("#pip-skip");
-
-      if (startBtn) startBtn.onclick = togglePomodoro;
-      if (resetBtn) resetBtn.onclick = resetPomodoro;
-      if (skipBtn) skipBtn.onclick = skipPomodoro;
-
-      // Mode tabs listeners
-      pipPomodoro.querySelectorAll(".pip-mode-tab").forEach(tab => {
-        tab.onclick = (e) => {
-          pomodoroMode = e.target.dataset.mode;
-          resetPomodoro();
-          renderPipTimer(); // Re-render to update active state of tabs
-        };
-      });
-    }
-
-    // Render tasks in PiP window
-    function renderPipTasks() {
-      // Ensure we have latest data
-      if (typeof currentUser === 'undefined' || !currentUser || typeof tasks === 'undefined' || !tasks) {
-        if (typeof pipTaskList !== 'undefined' && pipTaskList) {
-          pipTaskList.innerHTML = '<div class="pip-empty">Loading tasks...</div>';
-        }
-        return;
-      }
-
-      let headerHtml = "";
-      if (pomodoroRunning) {
-        const mins = Math.floor(pomodoroSeconds / 60);
-        const secs = pomodoroSeconds % 60;
-        const display = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-        headerHtml = `
-          <div class="pip-timer-hero" style="text-align:center; padding: 20px 10px; background: var(--gradient); border-radius: 15px; margin-bottom: 20px; box-shadow: var(--shadow); color: white;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.85; margin-bottom: 8px; font-weight: 600;">
-              ${pomodoroMode === "work" ? "Focus Time" : "Break Time"}
-            </div>
-            <div id="pip-mini-time-text" style="font-size: 3rem; font-weight: 850; font-family: 'Inter', sans-serif; letter-spacing: -1px; line-height: 1;">${display}</div>
-            ${hardModeEnabled ? '<div style="margin-top:10px; font-size: 0.65rem; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 20px; display: inline-block;"><i class="fas fa-lock"></i> STRICT MODE</div>' : ""}
-          </div>`;
-      }
-
-      const pendingTasks = tasks.filter((task) => !task.completed);
-
-      if (pendingTasks.length === 0) {
-        pipTaskList.innerHTML =
-          '<div class="pip-empty">No pending tasks</div>';
-        return;
-      }
-
-      // Show only the 5 most urgent tasks
-      const urgentTasks = pendingTasks
-        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-        .slice(0, 5);
-
-      pipTaskList.innerHTML =
-        headerHtml +
-        urgentTasks
-          .map(
-            (task) => `
-        <div class="pip-task-item" onclick="editTask('${task.id}')">
-          <div class="pip-task-title">${task.title}</div>
-          <div class="pip-task-due">Due: ${formatDate(new Date(task.dueDate))}</div>
-        </div>
-      `,
-          )
-          .join("");
-    }
-
-    // Update PiP timer display
-    function updatePipTimerDisplay() {
-      const minutes = Math.floor(pomodoroSeconds / 60);
-      const seconds = pomodoroSeconds % 60;
-      const display = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-
-      if (pipTimer) {
-        pipTimer.textContent = display;
-      }
-
-      const largeTimer = pipPomodoro ? pipPomodoro.querySelector("#pip-large-timer") : null;
-      if (largeTimer) {
-        largeTimer.textContent = display;
-      }
-
-      // Also update mini timer in task view if present
-      const miniTimer = pipTaskList
-        ? pipTaskList.querySelector("#pip-mini-time-text")
-        : null;
-      if (miniTimer) {
-        miniTimer.textContent = display;
-      }
-    }
-
-    // Function to switch PiP mode
-    function switchPipMode(mode) {
-      pipMode = mode;
-      updatePipContent();
-    }
-
-    // Initialize PiP when DOM is loaded
-    document.addEventListener("DOMContentLoaded", initializePip);
-
-    // Add keyboard shortcut for PiP
-    document.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "P") {
-        e.preventDefault();
-        togglePipWindow();
-      }
-    });
 
     // =============================================
     // 🎵 STUDY MUSIC PLAYER
@@ -6565,6 +6256,192 @@ END:VEVENT
     };
 
     // Note: addHardModeToggle is already called at line 6073
+
+    // =============================================
+    // 🖼️ PICTURE-IN-PICTURE (PiP)
+    // =============================================
+    let pipWindow = null;
+    let pipWindowOpen = false;
+
+    async function togglePipWindow() {
+      // Check if API is supported
+      if (!('documentPictureInPicture' in window)) {
+        showToast('Picture-in-Picture is not supported in this browser.', 'error');
+        return;
+      }
+
+      // If already open, close it
+      if (pipWindowOpen && pipWindow) {
+        pipWindow.close();
+        pipWindow = null;
+        pipWindowOpen = false;
+        return;
+      }
+
+      try {
+        // Request PiP Window
+        pipWindow = await window.documentPictureInPicture.requestWindow({
+          width: 350,
+          height: 500,
+        });
+        pipWindowOpen = true;
+
+        // Copy styles
+        [...document.styleSheets].forEach((styleSheet) => {
+          try {
+            const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+            const style = document.createElement('style');
+            style.textContent = cssRules;
+            pipWindow.document.head.appendChild(style);
+          } catch (e) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.type = styleSheet.type;
+            link.media = styleSheet.media;
+            link.href = styleSheet.href;
+            pipWindow.document.head.appendChild(link);
+          }
+        });
+
+        // Add specific PiP styles
+        const pipStyle = document.createElement('style');
+        pipStyle.textContent = `
+          body { padding: 10px; background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
+          .pip-container { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+          .timer-display { font-size: 3.5rem; text-align: center; margin: 10px 0; }
+          .task-item { padding: 8px; font-size: 0.9rem; }
+          .btn-icon { padding: 8px; border-radius: 50%; }
+        `;
+        pipWindow.document.head.appendChild(pipStyle);
+
+        // Content Container
+        const container = pipWindow.document.createElement('div');
+        container.className = 'pip-container';
+        pipWindow.document.body.appendChild(container);
+
+        // Function to render content
+        const renderContent = () => {
+          container.innerHTML = `
+            <div style="text-align: center;">
+              <h3 style="margin:0; color: var(--primary);">StudentFocus</h3>
+              <div class="timer-display" id="pip-timer">${document.getElementById('timer-display').textContent}</div>
+              <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                 <button id="pip-play" class="btn-icon" style="background: var(--gradient); color: white;"><i class="fas fa-${pomodoroRunning ? 'pause' : 'play'}"></i></button>
+                 <button id="pip-skip" class="btn-icon" style="background: var(--bg); border: 1px solid var(--border);"><i class="fas fa-forward"></i></button>
+              </div>
+            </div>
+            <div style="flex: 1; overflow-y: auto;">
+              <h4 style="margin-bottom: 5px;">🔥 Priority Tasks</h4>
+              <div id="pip-tasks">
+                ${getTopTasksHTML()}
+              </div>
+            </div>
+          `;
+
+          // Attach listeners
+          const playBtn = pipWindow.document.getElementById('pip-play');
+          const skipBtn = pipWindow.document.getElementById('pip-skip');
+
+          if (playBtn) playBtn.onclick = () => {
+            togglePomodoro();
+            renderContent(); // Re-render to update icon
+          };
+          if (skipBtn) skipBtn.onclick = () => {
+            skipPomodoro();
+            renderContent();
+          };
+        };
+
+        // Initial render
+        renderContent();
+
+        // Listen for close
+        pipWindow.addEventListener('pagehide', (event) => {
+          pipWindow = null;
+          pipWindowOpen = false;
+        });
+
+        // Expose update function globally so main window can call it
+        window.updatePipContent = renderContent;
+        window.updatePipTimerDisplay = () => {
+          if (pipWindow && pipWindow.document.getElementById('pip-timer')) {
+            pipWindow.document.getElementById('pip-timer').textContent = document.getElementById('timer-display').textContent;
+          }
+        };
+
+        // Sync tasks when they change
+        window.renderPipTasks = () => {
+          if (pipWindow && pipWindow.document.getElementById('pip-tasks')) {
+            pipWindow.document.getElementById('pip-tasks').innerHTML = getTopTasksHTML();
+          }
+        };
+
+      } catch (err) {
+        console.error("Error opening PiP window:", err);
+      }
+    }
+
+    function getTopTasksHTML() {
+      const topTasks = tasks.filter(t => !t.completed)
+        .sort((a, b) => {
+          const pMap = { High: 3, Medium: 2, Low: 1 };
+          return pMap[b.priority] - pMap[a.priority];
+        })
+        .slice(0, 3); // Top 3 tasks
+
+      if (topTasks.length === 0) return '<p style="text-align:center; color: var(--text-light);">No pending tasks!</p>';
+
+      return topTasks.map(t => `
+        <div style="background: var(--card-bg); padding: 8px; border-radius: 8px; margin-bottom: 5px; border-left: 3px solid var(--${t.priority === 'High' ? 'danger' : (t.priority === 'Medium' ? 'warning' : 'success')}); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+          <div style="font-weight: 500;">${t.title}</div>
+          <div style="font-size: 0.8rem; color: var(--text-light);">${t.subject}</div>
+        </div>
+      `).join('');
+    }
+
+    // =============================================
+    // 🎛️ HEADER CONTROLS
+    // =============================================
+    function toggleMusicPlayer() {
+      const player = document.getElementById("music-player");
+      player.classList.toggle("hidden");
+    }
+
+    function initHeaderControls() {
+      // Focus Mode Button
+      const focusBtn = document.getElementById("focus-mode-btn");
+      if (focusBtn) {
+        focusBtn.addEventListener("click", () => {
+          showSection("pomodoro");
+          showToast("Focus Mode Activated! 🎯", "info");
+        });
+      }
+
+      // Theme Toggle
+      const themeBtn = document.getElementById("theme-toggle");
+      if (themeBtn) {
+        themeBtn.addEventListener("click", () => {
+          const html = document.documentElement;
+          const isDark = html.getAttribute("data-theme") === "dark";
+          if (isDark) {
+            html.removeAttribute("data-theme");
+            themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+          } else {
+            html.setAttribute("data-theme", "dark");
+            themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+          }
+        });
+      }
+
+      // Music Button (in case inline onclick is removed or fails)
+      const musicBtn = document.getElementById("music-toggle-btn");
+      if (musicBtn) {
+        musicBtn.onclick = toggleMusicPlayer;
+      }
+    }
+
+    // Initialize Header Controls
+    document.addEventListener("DOMContentLoaded", initHeaderControls);
   </script>
 </body>
 
