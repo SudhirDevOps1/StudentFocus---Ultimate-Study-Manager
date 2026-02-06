@@ -4123,6 +4123,15 @@
           updateStudyData();
           showToast("🍅 Pomodoro complete! Take a break!", "success");
           playNotificationSound();
+
+          // Auto-play music if enabled
+          if (pomodoroSettings.musicEnabled !== false && musicTracks.length > 0) {
+            // Play random or next track
+            if (!isPlaying) {
+              playTrack();
+            }
+          }
+
           checkAchievements();
         } else {
           showToast("Break over! Ready to focus? 💪", "warning");
@@ -4786,15 +4795,29 @@
         // Update title if in DOM-based PiP
         if (pipTitle) pipTitle.textContent = "Pomodoro Timer";
         updatePipTimerDisplay();
+        // Also show tasks below timer in pomodoro mode if user wants?
+        // For now, let's keep them separate but allow easy toggling
       }
     }
 
     // Render tasks in PiP window
     function renderPipTasks() {
+      // Ensure we have latest data
       if (!currentUser || !tasks) {
         pipTaskList.innerHTML =
           '<div class="pip-empty">No tasks available</div>';
         return;
+      }
+
+      let headerHtml = '';
+      if (pomodoroRunning) {
+        const mins = Math.floor(pomodoroSeconds / 60);
+        const secs = pomodoroSeconds % 60;
+        const display = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+        headerHtml = `<div style="text-align:center; font-weight:bold; color:var(--primary); margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+            <i class="fas fa-stopwatch"></i> ${display} 
+            ${hardModeEnabled ? '<i class="fas fa-lock" style="font-size:0.8em; color:var(--danger)"></i>' : ''}
+         </div>`;
       }
 
       const pendingTasks = tasks.filter((task) => !task.completed);
@@ -4810,7 +4833,7 @@
         .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
         .slice(0, 5);
 
-      pipTaskList.innerHTML = urgentTasks
+      pipTaskList.innerHTML = headerHtml + urgentTasks
         .map(
           (task) => `
         <div class="pip-task-item" onclick="openEditTask('${task.id}')">
@@ -4871,36 +4894,36 @@
       {
         id: 1,
         title: "Focus Flow",
-        artist: "SoundHelix",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        artist: "StudentFocus",
+        src: "music/focus-flow.mp3",
         duration: "6:12",
       },
       {
         id: 2,
         title: "Deep Concentration",
-        artist: "SoundHelix",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        artist: "StudentFocus",
+        src: "music/deep-concentration.mp3",
         duration: "7:05",
       },
       {
         id: 3,
         title: "Calming Mind",
-        artist: "SoundHelix",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        artist: "StudentFocus",
+        src: "music/calming-mind.mp3",
         duration: "5:44",
       },
       {
         id: 4,
         title: "Productive Pulse",
-        artist: "SoundHelix",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+        artist: "StudentFocus",
+        src: "music/productive-pulse.mp3",
         duration: "5:02",
       },
       {
         id: 5,
         title: "Silent Study",
-        artist: "SoundHelix",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+        artist: "StudentFocus",
+        src: "music/silent-study.mp3",
         duration: "5:53",
       },
     ];
@@ -5693,6 +5716,8 @@
 
     // Handle when user loses focus during a session
     function handleFocusLoss() {
+      // If PiP window is open, we considered it "focused" enough for strict mode
+      if (pipWindowOpen) return;
       if (!hardModeEnabled || !pomodoroRunning) return;
 
       // End the current session and reset
