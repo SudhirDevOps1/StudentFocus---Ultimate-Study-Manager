@@ -1,0 +1,71 @@
+{
+    "rules": {
+        "users": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                ".validate": "newData.hasChildren(['name', 'email'])",
+                "name": {
+                    ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+                },
+                "email": {
+                    ".validate": "newData.isString() && newData.val().matches(/^[^@]+@[^@]+\\.[^@]+$/)"
+                },
+                "createdAt": {
+                    ".validate": "newData.isNumber()"
+                }
+            }
+        },
+        "tasks": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                ".indexOn": [
+                    "completed",
+                    "dueDate",
+                    "priority",
+                    "category",
+                    "createdAt"
+                ],
+                "$taskId": {
+                    ".validate": "newData.hasChildren(['title', 'subject', 'category', 'priority', 'dueDate', 'completed'])",
+                    "title": {
+                        ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+                    },
+                    "subject": {
+                        ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+                    },
+                    "category": {
+                        ".validate": "newData.isString() && newData.val().matches(/^(Homework|Project|Exam|Reading|Personal|Research|Presentation|Lab|Group|Assignment|Tutorial|Practice|Review)$/)"
+                    },
+                    "priority": {
+                        ".validate": "newData.isString() && newData.val().matches(/^(Low|Medium|High)$/)"
+                    },
+                    "dueDate": {
+                        ".validate": "newData.isString()"
+                    },
+                    "notes": {
+                        ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 500)"
+                    },
+                    "completed": {
+                        ".validate": "newData.isBoolean()"
+                    },
+                    "createdAt": {
+                        ".validate": "newData.isNumber()"
+                    },
+                    "updatedAt": {
+                        ".validate": "!newData.exists() || newData.isNumber()"
+                    },
+                    "completedAt": {
+                        ".validate": "!newData.exists() || newData.isNumber() || newData.val() == null"
+                    }
+                }
+            }
+        },
+        "$other": {
+            ".read": false,
+            ".write": false
+        }
+    }
+}
+
