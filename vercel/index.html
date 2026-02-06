@@ -1378,6 +1378,112 @@
       font-size: 0.85rem;
     }
 
+    /* Flashcards */
+    .decks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .deck-card {
+      background: var(--bg);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .deck-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow);
+      background: var(--card-bg);
+      border: 1px solid var(--primary);
+    }
+
+    .deck-count {
+      display: inline-block;
+      background: var(--primary-light);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    .flashcard-container {
+      perspective: 1000px;
+      width: 100%;
+      height: 300px;
+      margin: 2rem 0;
+    }
+
+    .flashcard {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .flashcard.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      border-radius: 20px;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+
+    .flashcard-back {
+      background: var(--card-bg);
+      transform: rotateY(180deg);
+      border-color: var(--primary);
+    }
+
+    .study-controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    /* Sound Buttons */
+    .sound-btn {
+      opacity: 0.6;
+      transition: all 0.2s ease;
+    }
+
+    .sound-btn.active {
+      opacity: 1;
+      background: var(--primary-light);
+      color: white;
+      transform: scale(1.1);
+    }
+
     /* Empty State */
     .empty-state {
       text-align: center;
@@ -2266,6 +2372,9 @@
       <button class="nav-tab" data-section="notes">
         <i class="fas fa-sticky-note"></i> Notes
       </button>
+      <button class="nav-tab" data-section="flashcards">
+        <i class="fas fa-layer-group"></i> Flashcards
+      </button>
       <button class="nav-tab" data-section="achievements">
         <i class="fas fa-trophy"></i> Achievements
       </button>
@@ -2327,6 +2436,37 @@
             <h3><i class="fas fa-stopwatch"></i> Focus Sessions</h3>
             <div class="stat-value" id="pomo-today">0</div>
             <div class="stat-sub">Pomodoros today</div>
+          </div>
+
+          <!-- Weekly Goals -->
+          <div class="stat-card">
+            <h3><i class="fas fa-bullseye"></i> Weekly Goal</h3>
+            <div class="stat-value" id="weekly-total-time">0h 0m</div>
+            <div class="stat-sub">
+              Goal: <span id="weekly-goal-display">10h</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="weekly-goal-fill" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Focus Analytics -->
+          <div class="stat-card gradient-cool">
+            <h3><i class="fas fa-chart-area"></i> Focus Analytics</h3>
+            <div style="display: flex; justify-content: space-between; gap: 1rem;">
+              <div style="text-align: center;">
+                <div class="stat-value" style="font-size: 1.5rem;" id="peak-study-hours">--</div>
+                <div class="stat-sub">Peak Hour</div>
+              </div>
+              <div style="text-align: center;">
+                <div class="stat-value" style="font-size: 1.5rem;" id="avg-session-length">-- min</div>
+                <div class="stat-sub">Avg Session</div>
+              </div>
+              <div style="text-align: center;">
+                <div class="stat-value" style="font-size: 1.5rem;" id="total-sessions-count">0</div>
+                <div class="stat-sub">Total</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2414,6 +2554,10 @@
             <button id="export-btn" class="btn-icon" title="Export CSV">
               <i class="fas fa-file-csv"></i>
             </button>
+            <button id="calendar-export-btn" class="btn-icon" title="Export to Google Calendar"
+              onclick="exportToCalendar()">
+              <i class="fas fa-calendar-plus"></i>
+            </button>
           </div>
         </div>
 
@@ -2456,6 +2600,13 @@
           </div>
           <div class="form-row">
             <input type="text" id="task-notes" placeholder="📝 Notes (Optional)" />
+            <select id="task-reminder">
+              <option value="">🔔 No Reminder</option>
+              <option value="15min">⏰ 15 min before</option>
+              <option value="30min">⏰ 30 min before</option>
+              <option value="1hr">⏰ 1 hour before</option>
+              <option value="1day">⏰ 1 day before</option>
+            </select>
           </div>
           <button type="submit" class="btn-primary">
             <i class="fas fa-check"></i> Add Task
@@ -2771,6 +2922,99 @@
               <h3>No notes yet</h3>
               <p>Create your first quick note!</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FLASHCARDS SECTION -->
+      <div id="section-flashcards" class="section-content hidden">
+        <div class="section-header">
+          <h2><i class="fas fa-layer-group"></i> Flashcards</h2>
+          <button class="btn-primary" id="add-deck-btn">
+            <i class="fas fa-plus"></i> New Deck
+          </button>
+        </div>
+
+        <!-- Deck Creation Form -->
+        <form id="deck-form" class="hidden"
+          style="background: var(--card-bg); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem;">
+          <div class="form-header">
+            <h3><i class="fas fa-folder-plus"></i> Create New Deck</h3>
+            <button type="button" id="close-deck-form" class="btn-icon"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="form-row">
+            <input type="text" id="deck-name" placeholder="📚 Deck Name (e.g., Math Chapter 1)" required>
+          </div>
+          <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Create Deck</button>
+        </form>
+
+        <!-- Decks Grid -->
+        <div class="decks-grid" id="decks-grid">
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <i class="fas fa-layer-group"></i>
+            <h3>No flashcard decks yet</h3>
+            <p>Create your first deck to start studying!</p>
+          </div>
+        </div>
+
+        <!-- Study Mode Modal -->
+        <div id="study-modal" class="modal-overlay hidden">
+          <div class="modal" style="max-width: 600px;">
+            <div class="study-header">
+              <h3 id="study-deck-name">Studying: Deck Name</h3>
+              <span id="card-counter">1/10</span>
+              <button type="button" id="close-study" class="btn-icon"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flashcard-container">
+              <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flashcard-inner">
+                  <div class="flashcard-front" id="card-front">
+                    <span>Question goes here</span>
+                  </div>
+                  <div class="flashcard-back" id="card-back">
+                    <span>Answer goes here</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="study-controls">
+              <button class="btn-icon" onclick="prevCard()" title="Previous"><i class="fas fa-arrow-left"></i></button>
+              <button class="btn-danger" onclick="markCard(false)" title="Don't Know"><i class="fas fa-times"></i> Don't
+                Know</button>
+              <button class="btn-success" onclick="markCard(true)" title="Know It"><i class="fas fa-check"></i> Know
+                It</button>
+              <button class="btn-icon" onclick="nextCard()" title="Next"><i class="fas fa-arrow-right"></i></button>
+            </div>
+            <div class="study-progress" style="margin-top: 1rem;">
+              <div class="progress-bar-bg">
+                <div id="study-progress-fill" class="progress-fill" style="width: 0%; background: var(--success);">
+                </div>
+              </div>
+              <small style="color: var(--text-light);"><span id="known-count">0</span> known / <span
+                  id="total-cards">0</span> total</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Card Modal -->
+        <div id="card-modal" class="modal-overlay hidden">
+          <div class="modal">
+            <h3><i class="fas fa-plus-circle"></i> Add Flashcard</h3>
+            <form id="card-form">
+              <input type="hidden" id="card-deck-id">
+              <div class="form-row">
+                <textarea id="card-front-input" placeholder="📝 Front (Question)" rows="3" required
+                  style="width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg); color: var(--text);"></textarea>
+              </div>
+              <div class="form-row">
+                <textarea id="card-back-input" placeholder="✅ Back (Answer)" rows="3" required
+                  style="width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg); color: var(--text);"></textarea>
+              </div>
+              <div class="modal-actions">
+                <button type="button" id="cancel-card" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Add Card</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -3431,7 +3675,9 @@
 
       // Load Tasks
       console.log("Loading tasks...");
-      db.ref(`tasks/${currentUser.uid}`).on("value", (snapshot) => {
+      const tasksRef = db.ref(`tasks/${currentUser.uid}`);
+      tasksRef.off();
+      tasksRef.on("value", (snapshot) => {
         console.log("Tasks data received:", snapshot.val());
         tasks = [];
         snapshot.forEach((child) =>
@@ -3440,30 +3686,43 @@
         console.log("Tasks loaded:", tasks.length);
         renderTasks();
         updateStats();
+      }, (error) => {
+        console.error("Tasks Load Error:", error);
+        showToast("Sync Error: Tasks not loaded", "error");
       });
 
       // Load Grades
-      db.ref(`grades/${currentUser.uid}`).on("value", (snapshot) => {
+      const gradesRef = db.ref(`grades/${currentUser.uid}`);
+      gradesRef.off();
+      gradesRef.on("value", (snapshot) => {
         grades = [];
         snapshot.forEach((child) =>
           grades.push({ id: child.key, ...child.val() }),
         );
         renderGrades();
         calculateGPA();
+      }, (error) => {
+        console.error("Grades Load Error:", error);
       });
 
       // Load Notes
-      db.ref(`notes/${currentUser.uid}`).on("value", (snapshot) => {
+      const notesRef = db.ref(`notes/${currentUser.uid}`);
+      notesRef.off();
+      notesRef.on("value", (snapshot) => {
         notes = [];
         snapshot.forEach((child) =>
           notes.push({ id: child.key, ...child.val() }),
         );
         renderNotes();
+      }, (error) => {
+        console.error("Notes Load Error:", error);
       });
 
       // Load Study Data
       console.log("Loading study data...");
-      db.ref(`studyData/${currentUser.uid}`).on("value", (snapshot) => {
+      const studyRef = db.ref(`studyData/${currentUser.uid}`);
+      studyRef.off();
+      studyRef.on("value", (snapshot) => {
         console.log("Study data received:", snapshot.val());
         if (snapshot.exists()) {
           studyData = { ...studyData, ...snapshot.val() };
@@ -3482,10 +3741,14 @@
           updateStudyDisplay();
           updateStreak();
         }
+      }, (error) => {
+        console.error("Study Data Error:", error);
       });
 
       // Load Pomodoro Stats
-      db.ref(`pomodoroStats/${currentUser.uid}`).on("value", (snapshot) => {
+      const statsRef = db.ref(`pomodoroStats/${currentUser.uid}`);
+      statsRef.off();
+      statsRef.on("value", (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           todayPomodoros = data.todayCount || 0;
@@ -3496,15 +3759,21 @@
           document.getElementById("pomo-total-time").textContent =
             Math.floor(totalFocusMinutes / 60) + "h";
         }
+      }, (error) => {
+        console.error("Stats Load Error:", error);
       });
 
       // Load Achievements
       console.log("Loading achievements...");
-      db.ref(`achievements/${currentUser.uid}`).on("value", (snapshot) => {
+      const achvRef = db.ref(`achievements/${currentUser.uid}`);
+      achvRef.off();
+      achvRef.on("value", (snapshot) => {
         console.log("Achievements data received:", snapshot.val());
         unlockedAchievements = snapshot.val() || [];
         console.log("Loaded achievements:", unlockedAchievements);
         renderAchievements();
+      }, (error) => {
+        console.error("Achievements Error:", error);
       });
 
       // Load Settings
@@ -3531,7 +3800,22 @@
             pomodoroSeconds = pomodoroSettings.focus * 60;
             updateTimerDisplay();
           }
+        }).catch(err => {
+          console.error("Settings Load Error:", err);
         });
+
+      // Monitor Connection State
+      const connectedRef = db.ref(".info/connected");
+      connectedRef.off();
+      connectedRef.on("value", (snap) => {
+        if (snap.val() === true) {
+          console.log("Connected to Firebase Realtime Database");
+          showToast("Sync Online 🟢", "info");
+        } else {
+          console.warn("Disconnected from Firebase Realtime Database");
+          showToast("Sync Offline 🔴 - Check Internet", "warning");
+        }
+      });
     }
 
     // =============================================
@@ -3612,6 +3896,7 @@
           estimated:
             parseInt(document.getElementById("task-estimated").value) || 30,
           notes: document.getElementById("task-notes").value,
+          reminder: document.getElementById("task-reminder").value || null,
           completed: false,
           createdAt: Date.now(),
         };
@@ -3626,13 +3911,13 @@
           const testRef = db.ref(`.info/connected`);
           console.log("Firebase connection test:", testRef);
 
-          const result = await db.ref(`tasks/${currentUser.uid}`).push(task);
-          console.log("Task saved successfully:", result.key);
+          const path = `tasks/${currentUser.uid}`;
+          console.log(`Attempting to push to path: ${path}`);
+          const result = await db.ref(path).push(task);
+          console.log("Task saved successfully with key:", result.key);
 
-          // Add to local tasks array immediately for better UX
-          tasks.push({ id: result.key, ...task });
-          renderTasks();
-          updateStats();
+          // NOTE: We rely on the firebase listener in loadAllData to update the 'tasks' array 
+          // and call renderTasks() automatically.
 
           document.getElementById("task-form").reset();
           document.getElementById("task-form").classList.add("hidden");
@@ -3640,11 +3925,7 @@
           checkAchievements();
         } catch (err) {
           console.error("Error adding task:", err);
-          console.error("Error details:", err.message, err.code, err.stack);
-          showToast(
-            `Error adding task: ${err.message || "Unknown error"}`,
-            "error",
-          );
+          showToast(`Error adding task: ${err.code || err.message}`, "error");
         }
       });
 
@@ -3660,10 +3941,7 @@
         }
       } catch (err) {
         console.error("Error updating task completion:", err);
-        showToast(
-          `Error updating task: ${err.message || "Unknown error"}`,
-          "error",
-        );
+        showToast(`Update failed: ${err.code || err.message}`, "error");
       }
     };
 
@@ -3674,10 +3952,7 @@
           showToast("Task deleted", "success");
         } catch (err) {
           console.error("Error deleting task:", err);
-          showToast(
-            `Error deleting task: ${err.message || "Unknown error"}`,
-            "error",
-          );
+          showToast(`Delete failed: ${err.code || err.message}`, "error");
         }
       }
     };
@@ -4597,7 +4872,6 @@
           .push(task)
           .then((result) => {
             console.log(`Test task ${i + 1} added:`, result.key);
-            tasks.push({ id: result.key, ...task });
           })
           .catch((err) => {
             console.error(`Error adding test task ${i + 1}:`, err);
@@ -4826,13 +5100,10 @@
 
       // Timer controls
       pipStartStopBtn.addEventListener("click", () => {
-        if (pomodoroRunning) {
-          pausePomodoro();
-          pipStartStopBtn.innerHTML = '<i class="fas fa-play"></i>';
-        } else {
-          startPomodoro();
-          pipStartStopBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        }
+        togglePomodoro();
+        pipStartStopBtn.innerHTML = pomodoroRunning
+          ? '<i class="fas fa-pause"></i>'
+          : '<i class="fas fa-play"></i>';
       });
 
       pipResetBtn.addEventListener("click", () => {
@@ -5994,7 +6265,9 @@
       if (!hardModeEnabled || !pomodoroRunning) return;
 
       // End the current session and reset
-      pausePomodoro();
+      if (pomodoroRunning) {
+        togglePomodoro(); // Stop the timer
+      }
       resetPomodoro();
 
       // Update stats - don't count this as a completed session
@@ -6009,7 +6282,7 @@
       showToast("Session failed! You left during Hard Mode.", "error");
 
       // Update the UI to reflect the failure
-      updatePomodoroDisplay();
+      updateTimerDisplay();
     }
 
     // Enhanced pomodoro start for hard mode
@@ -6018,7 +6291,9 @@
         sessionStartedInFocus = true;
         showToast("Hard Mode Session Started! Stay focused!", "info");
       }
-      startPomodoro();
+      if (!pomodoroRunning) {
+        togglePomodoro();
+      }
     }
 
     // Initialize focus detection
@@ -6114,7 +6389,500 @@
       return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
 
-    document.addEventListener("DOMContentLoaded", addHardModeToggle);
+    // =============================================
+    // 🎵 FOCUS SOUNDS
+    // =============================================
+    const ambientSounds = {
+      rain: new Audio('https://cdn.freesound.org/previews/531/531947_10356620-lq.mp3'),
+      forest: new Audio('https://cdn.freesound.org/previews/610/610702_5674468-lq.mp3'),
+      cafe: new Audio('https://cdn.freesound.org/previews/463/463836_9497060-lq.mp3'),
+      waves: new Audio('https://cdn.freesound.org/previews/527/527604_2193266-lq.mp3')
+    };
+
+    let currentAmbientSound = null;
+
+    // Set all ambient sounds to loop
+    Object.values(ambientSounds).forEach(audio => {
+      audio.loop = true;
+      audio.volume = 0.5;
+    });
+
+    function playAmbientSound(soundName) {
+      // Stop current sound
+      if (currentAmbientSound) {
+        currentAmbientSound.pause();
+        currentAmbientSound.currentTime = 0;
+      }
+
+      // Remove active class from all buttons
+      document.querySelectorAll('.sound-btn').forEach(btn => btn.classList.remove('active'));
+
+      if (soundName === 'none' || !ambientSounds[soundName]) {
+        currentAmbientSound = null;
+        showToast('Ambient sound stopped', 'info');
+        return;
+      }
+
+      currentAmbientSound = ambientSounds[soundName];
+      currentAmbientSound.play().catch(err => {
+        console.error('Error playing ambient sound:', err);
+        showToast('Could not play sound - try clicking again', 'warning');
+      });
+
+      // Add active class to clicked button
+      const btn = document.querySelector(`.sound-btn[data-sound="${soundName}"]`);
+      if (btn) btn.classList.add('active');
+
+      showToast(`Playing: ${soundName.charAt(0).toUpperCase() + soundName.slice(1)} 🎵`, 'success');
+    }
+
+    // Attach sound button listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.sound-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          playAmbientSound(btn.dataset.sound);
+        });
+      });
+    });
+
+    // =============================================
+    // 🔔 TASK REMINDERS
+    // =============================================
+    let reminderCheckInterval = null;
+    let notifiedTasks = new Set(); // Track which tasks we've already notified about
+
+    function startReminderChecker() {
+      if (reminderCheckInterval) clearInterval(reminderCheckInterval);
+
+      reminderCheckInterval = setInterval(() => {
+        if (!currentUser || tasks.length === 0) return;
+
+        const now = new Date();
+
+        tasks.forEach(task => {
+          if (task.completed || !task.reminder || notifiedTasks.has(task.id)) return;
+
+          const dueDate = new Date(task.dueDate);
+          const timeDiff = dueDate - now;
+          const minutesDiff = timeDiff / (1000 * 60);
+
+          let shouldNotify = false;
+          let reminderText = '';
+
+          switch (task.reminder) {
+            case '15min':
+              shouldNotify = minutesDiff <= 15 && minutesDiff > 0;
+              reminderText = '15 minutes';
+              break;
+            case '30min':
+              shouldNotify = minutesDiff <= 30 && minutesDiff > 0;
+              reminderText = '30 minutes';
+              break;
+            case '1hr':
+              shouldNotify = minutesDiff <= 60 && minutesDiff > 0;
+              reminderText = '1 hour';
+              break;
+            case '1day':
+              shouldNotify = minutesDiff <= 1440 && minutesDiff > 0;
+              reminderText = '1 day';
+              break;
+          }
+
+          if (shouldNotify) {
+            notifiedTasks.add(task.id);
+            showDesktopNotification(
+              `⏰ Task Reminder: ${task.title}`,
+              `Due in ${reminderText} - ${task.subject}`
+            );
+            showToast(`⏰ "${task.title}" due in ${reminderText}!`, 'warning');
+          }
+        });
+      }, 60000); // Check every minute
+    }
+
+    // Start reminder checker when user logs in
+    document.addEventListener('DOMContentLoaded', () => {
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          startReminderChecker();
+        } else {
+          if (reminderCheckInterval) clearInterval(reminderCheckInterval);
+        }
+      });
+    });
+
+    // =============================================
+    // 🎯 WEEKLY GOALS
+    // =============================================
+    let weeklyGoalHours = 10; // default 10 hours per week
+
+    function getWeekNumber() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const diff = now - start;
+      const oneWeek = 604800000; // milliseconds in a week
+      return Math.floor(diff / oneWeek);
+    }
+
+    function updateWeeklyGoalDisplay() {
+      const weeklyTotalEl = document.getElementById('weekly-total-time');
+      const weeklyGoalEl = document.getElementById('weekly-goal-display');
+      const weeklyFillEl = document.getElementById('weekly-goal-fill');
+
+      if (!studyData.weekly) return;
+
+      const totalMinutes = studyData.weekly.reduce((sum, day) => sum + day, 0);
+      const totalHours = Math.floor(totalMinutes / 60);
+      const remainingMins = totalMinutes % 60;
+
+      if (weeklyTotalEl) weeklyTotalEl.textContent = `${totalHours}h ${remainingMins}m`;
+      if (weeklyGoalEl) weeklyGoalEl.textContent = `${weeklyGoalHours}h`;
+
+      const progress = Math.min(100, Math.round((totalMinutes / (weeklyGoalHours * 60)) * 100));
+      if (weeklyFillEl) weeklyFillEl.style.width = progress + '%';
+    }
+
+    // =============================================
+    // ⏰ FOCUS ANALYTICS
+    // =============================================
+    let studySessions = [];
+
+    function addStudySession(duration) {
+      const session = {
+        startTime: Date.now() - (duration * 60 * 1000),
+        duration: duration,
+        date: new Date().toISOString().split('T')[0],
+        hour: new Date().getHours()
+      };
+
+      studySessions.push(session);
+
+      // Save to Firebase
+      if (currentUser) {
+        db.ref(`studyData/${currentUser.uid}/sessions`).push(session).catch(err => {
+          console.error('Error saving session:', err);
+        });
+      }
+
+      updateFocusAnalytics();
+    }
+
+    function updateFocusAnalytics() {
+      const peakHoursEl = document.getElementById('peak-study-hours');
+      const avgSessionEl = document.getElementById('avg-session-length');
+      const totalSessionsEl = document.getElementById('total-sessions-count');
+
+      if (studySessions.length === 0) return;
+
+      // Calculate peak hours
+      const hourCounts = {};
+      studySessions.forEach(s => {
+        hourCounts[s.hour] = (hourCounts[s.hour] || 0) + 1;
+      });
+
+      const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+      if (peakHour && peakHoursEl) {
+        const hour = parseInt(peakHour[0]);
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+        peakHoursEl.textContent = `${displayHour} ${period}`;
+      }
+
+      // Average session length
+      const avgDuration = studySessions.reduce((sum, s) => sum + s.duration, 0) / studySessions.length;
+      if (avgSessionEl) avgSessionEl.textContent = `${Math.round(avgDuration)} min`;
+
+      // Total sessions
+      if (totalSessionsEl) totalSessionsEl.textContent = studySessions.length;
+    }
+
+    // Load sessions from Firebase
+    function loadStudySessions() {
+      if (!currentUser) return;
+
+      db.ref(`studyData/${currentUser.uid}/sessions`).once('value').then(snapshot => {
+        studySessions = [];
+        if (snapshot.exists()) {
+          snapshot.forEach(child => {
+            studySessions.push(child.val());
+          });
+        }
+        updateFocusAnalytics();
+      }).catch(err => {
+        console.error('Error loading sessions:', err);
+      });
+    }
+
+    // Track session completion
+    const originalTickPomodoro = tickPomodoro;
+    tickPomodoro = function () {
+      const wasRunning = pomodoroRunning;
+      const prevSeconds = pomodoroSeconds;
+
+      originalTickPomodoro.apply(this, arguments);
+
+      // If timer just completed a work session
+      if (wasRunning && pomodoroSeconds <= 0 && pomodoroMode === 'work') {
+        addStudySession(pomodoroSettings.focus);
+      }
+    };
+
+    // =============================================
+    // 📅 CALENDAR EXPORT (ICS)
+    // =============================================
+    function exportToCalendar() {
+      if (tasks.length === 0) {
+        showToast('No tasks to export!', 'warning');
+        return;
+      }
+
+      const pendingTasks = tasks.filter(t => !t.completed);
+      if (pendingTasks.length === 0) {
+        showToast('All tasks completed! Nothing to export.', 'info');
+        return;
+      }
+
+      let icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//StudentFocus//Task Export//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+`;
+
+      pendingTasks.forEach(task => {
+        const dueDate = new Date(task.dueDate);
+        const startDate = formatICSDate(dueDate);
+        const endDate = formatICSDate(new Date(dueDate.getTime() + 3600000)); // 1 hour duration
+
+        icsContent += `BEGIN:VEVENT
+DTSTART:${startDate}
+DTEND:${endDate}
+SUMMARY:${escapeICS(task.title)} (${task.subject})
+DESCRIPTION:${escapeICS(task.notes || 'No notes')}\\nCategory: ${task.category}\\nPriority: ${task.priority}
+CATEGORIES:${task.category}
+PRIORITY:${task.priority === 'High' ? 1 : task.priority === 'Medium' ? 5 : 9}
+STATUS:CONFIRMED
+UID:${task.id}@studentfocus.app
+END:VEVENT
+`;
+      });
+
+      icsContent += 'END:VCALENDAR';
+
+      // Download file
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `StudentFocus_Tasks_${new Date().toISOString().split('T')[0]}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`Exported ${pendingTasks.length} tasks! Import the file to Google Calendar.`, 'success');
+    }
+
+    function formatICSDate(date) {
+      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    }
+
+    function escapeICS(text) {
+      return text.replace(/[,;\\]/g, '\\$&').replace(/\n/g, '\\n');
+    }
+
+    // =============================================
+    // 🃏 FLASHCARDS
+    // =============================================
+    let flashcardDecks = {};
+    let currentStudyDeck = null;
+    let currentCardIndex = 0;
+    let currentSessionCards = [];
+
+    // Load Flashcards
+    function loadFlashcards() {
+      if (!currentUser) return;
+
+      const decksRef = db.ref(`flashcards/${currentUser.uid}`);
+      decksRef.off();
+      decksRef.on('value', (snapshot) => {
+        flashcardDecks = snapshot.val() || {};
+        renderDecks();
+      });
+    }
+
+    // Add Deck
+    document.getElementById('add-deck-btn').addEventListener('click', () => {
+      document.getElementById('deck-form').classList.remove('hidden');
+    });
+
+    document.getElementById('close-deck-form').addEventListener('click', () => {
+      document.getElementById('deck-form').classList.add('hidden');
+    });
+
+    document.getElementById('deck-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('deck-name').value;
+      if (!name) return;
+
+      db.ref(`flashcards/${currentUser.uid}`).push({
+        name: name,
+        createdAt: Date.now(),
+        cards: []
+      }).then(() => {
+        document.getElementById('deck-form').reset();
+        document.getElementById('deck-form').classList.add('hidden');
+        showToast('Deck created! 📚', 'success');
+      });
+    });
+
+    function deleteDeck(deckId) {
+      if (confirm('Delete this deck and all its cards?')) {
+        db.ref(`flashcards/${currentUser.uid}/${deckId}`).remove();
+        showToast('Deck deleted', 'success');
+      }
+    }
+
+    function renderDecks() {
+      const grid = document.getElementById('decks-grid');
+      const decks = Object.entries(flashcardDecks);
+
+      if (decks.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><i class="fas fa-layer-group"></i><h3>No decks yet</h3><p>Create your first deck to start studying!</p></div>`;
+        return;
+      }
+
+      grid.innerHTML = decks.map(([id, deck]) => {
+        const cardCount = deck.cards ? Object.keys(deck.cards).length : 0;
+        return `
+          <div class="deck-card" onclick="openDeck('${id}')">
+            <button onclick="event.stopPropagation(); deleteDeck('${id}')" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fas fa-trash"></i></button>
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+            <h4>${deck.name}</h4>
+            <div class="deck-count">${cardCount} cards</div>
+            <button class="btn-primary" style="margin-top: 1rem; width: 100%; border-radius: 20px;" onclick="event.stopPropagation(); startStudy('${id}')">Study Now</button>
+            <button class="btn-secondary" style="margin-top: 0.5rem; width: 100%; border-radius: 20px;" onclick="event.stopPropagation(); addCardModal('${id}')">Add Card</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Add Card
+    function addCardModal(deckId) {
+      document.getElementById('card-deck-id').value = deckId;
+      document.getElementById('card-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('cancel-card').addEventListener('click', () => {
+      document.getElementById('card-modal').classList.add('hidden');
+    });
+
+    document.getElementById('card-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const deckId = document.getElementById('card-deck-id').value;
+      const front = document.getElementById('card-front-input').value;
+      const back = document.getElementById('card-back-input').value;
+
+      db.ref(`flashcards/${currentUser.uid}/${deckId}/cards`).push({
+        front,
+        back,
+        known: false,
+        createdAt: Date.now()
+      }).then(() => {
+        document.getElementById('card-form').reset();
+        document.getElementById('card-modal').classList.add('hidden');
+        showToast('Card added! 🃏', 'success');
+      });
+    });
+
+    // Study Mode
+    function startStudy(deckId) {
+      currentStudyDeck = flashcardDecks[deckId];
+      if (!currentStudyDeck || !currentStudyDeck.cards) {
+        showToast('No cards in this deck!', 'warning');
+        return;
+      }
+
+      currentSessionCards = Object.values(currentStudyDeck.cards);
+      currentCardIndex = 0;
+
+      document.getElementById('study-deck-name').textContent = `Studying: ${currentStudyDeck.name}`;
+      document.getElementById('study-modal').classList.remove('hidden');
+      updateCardDisplay();
+    }
+
+    document.getElementById('close-study').addEventListener('click', () => {
+      document.getElementById('study-modal').classList.add('hidden');
+    });
+
+    function updateCardDisplay() {
+      const card = currentSessionCards[currentCardIndex];
+      const total = currentSessionCards.length;
+
+      document.getElementById('card-counter').textContent = `${currentCardIndex + 1}/${total}`;
+      document.getElementById('card-front').innerHTML = `<span>${card.front}</span>`;
+      document.getElementById('card-back').innerHTML = `<span>${card.back}</span>`;
+      document.getElementById('flashcard').classList.remove('flipped');
+
+      // Update progress
+      const known = currentSessionCards.filter(c => c.known).length;
+      document.getElementById('known-count').textContent = known;
+      document.getElementById('total-cards').textContent = total;
+      document.getElementById('study-progress-fill').style.width = `${(known / total) * 100}%`;
+    }
+
+    function flipCard() {
+      document.getElementById('flashcard').classList.toggle('flipped');
+    }
+
+    function nextCard() {
+      if (currentCardIndex < currentSessionCards.length - 1) {
+        currentCardIndex++;
+        updateCardDisplay();
+      } else {
+        showToast('End of deck! 🎉', 'success');
+      }
+    }
+
+    function prevCard() {
+      if (currentCardIndex > 0) {
+        currentCardIndex--;
+        updateCardDisplay();
+      }
+    }
+
+    function markCard(isKnown) {
+      const deckId = Object.keys(flashcardDecks).find(key => flashcardDecks[key] === currentStudyDeck);
+      const cardId = Object.keys(currentStudyDeck.cards)[currentCardIndex];
+
+      // Update local state temporarily
+      currentSessionCards[currentCardIndex].known = isKnown;
+
+      // Update in Firebase
+      if (deckId && cardId) {
+        db.ref(`flashcards/${currentUser.uid}/${deckId}/cards/${cardId}/known`).set(isKnown);
+      }
+
+      if (isKnown) showToast('Marked as Known! 👍', 'success');
+
+      // Auto advance
+      setTimeout(() => {
+        if (currentCardIndex < currentSessionCards.length - 1) {
+          nextCard();
+        } else {
+          updateCardDisplay(); // Just update progress
+          showToast('Deck completed! Great job! 🎓', 'success');
+        }
+      }, 300);
+    }
+
+    // Initialize Flashcards Load
+    const originalLoadAllData = loadAllData;
+    loadAllData = function () {
+      originalLoadAllData();
+      loadFlashcards();
+      loadStudySessions(); // Also load focus analytics sessions
+    };
+
+    // Note: addHardModeToggle is already called at line 6073
   </script>
 </body>
 
