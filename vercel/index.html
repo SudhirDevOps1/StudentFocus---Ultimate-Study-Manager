@@ -2204,7 +2204,9 @@
               class="btn-primary"
               onclick="
                 showSection('tasks');
-                document.getElementById('task-form').classList.remove('hidden');
+                setTimeout(() => {
+                  document.getElementById('task-form').classList.remove('hidden');
+                }, 10);
               "
             >
               <i class="fas fa-plus"></i> Add Task
@@ -2815,7 +2817,6 @@
       // =============================================
       // 🔥 FIREBASE CONFIGURATION
       // =============================================
-    
 
 
 
@@ -3380,6 +3381,7 @@
         // Load Achievements
         db.ref(`achievements/${currentUser.uid}`).on("value", (snapshot) => {
           unlockedAchievements = snapshot.val() || [];
+          console.log("Loaded achievements:", unlockedAchievements);
           renderAchievements();
         });
 
@@ -4066,9 +4068,17 @@
         // Update weekly chart
         const maxWeekly = Math.max(...studyData.weekly, 60);
         const chart = document.getElementById("weekly-chart");
+        
+        if (!chart) {
+          console.error("Weekly chart element not found!");
+          return;
+        }
+        
         const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         const today = new Date().getDay();
 
+        console.log("Updating chart with data:", studyData.weekly);
+        
         chart.innerHTML = studyData.weekly
           .map((mins, i) => {
             const height = Math.max(10, (mins / maxWeekly) * 100);
@@ -4103,6 +4113,13 @@
       // =============================================
       function renderAchievements() {
         const grid = document.getElementById("achievements-grid");
+        if (!grid) {
+          console.error("Achievements grid element not found!");
+          return;
+        }
+        
+        console.log("Rendering achievements. Total:", achievementsList.length, "Unlocked:", unlockedAchievements.length);
+        
         grid.innerHTML = achievementsList
           .map((a) => {
             const unlocked = unlockedAchievements.includes(a.id);
@@ -4488,43 +4505,42 @@
       const currentTrackEl = document.getElementById("current-track");
       const closeMusicBtn = document.getElementById("close-music");
 
-      // Sample local music tracks (these would typically be in a /music folder)
-      // In a real implementation, these would point to local files in a music folder
+      // Music tracks using online sources for demonstration
+      // In a production app, you would use your own hosted music files
       const musicTracks = [
         {
           id: 1,
           title: "Focus Flow",
           artist: "Study Beats",
-          // Using placeholder URLs - in a real implementation these would point to local files
-          src: "music/focus-flow.mp3", // Local music folder
+          src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           duration: "3:45",
         },
         {
           id: 2,
           title: "Deep Concentration",
           artist: "Ambient Sounds",
-          src: "music/deep-concentration.mp3",
+          src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
           duration: "4:20",
         },
         {
           id: 3,
           title: "Calming Mind",
           artist: "Nature Sounds",
-          src: "music/calming-mind.mp3",
+          src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
           duration: "5:15",
         },
         {
           id: 4,
           title: "Productive Pulse",
           artist: "Work Music",
-          src: "music/productive-pulse.mp3",
+          src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
           duration: "3:50",
         },
         {
           id: 5,
           title: "Silent Study",
           artist: "White Noise",
-          src: "music/silent-study.mp3",
+          src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
           duration: "10:00",
         },
       ];
@@ -4598,6 +4614,12 @@
         // Try to load the duration once metadata is loaded
         audioPlayer.onloadedmetadata = function () {
           totalTimeEl.textContent = formatTime(audioPlayer.duration);
+        };
+
+        // Handle loading errors
+        audioPlayer.onerror = function (e) {
+          console.error("Error loading audio:", e);
+          showToast("Error loading music track. Please try another track.", "error");
         };
 
         highlightActiveTrack(index);
