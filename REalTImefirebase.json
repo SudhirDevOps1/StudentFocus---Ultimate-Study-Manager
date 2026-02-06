@@ -30,7 +30,10 @@
                 "$taskId": {
                     ".validate": "newData.hasChildren(['title', 'subject', 'category', 'priority', 'dueDate', 'completed'])",
                     "title": {
-                        ".validate": "newData.isString() && newData.val().length <= 200"
+                        ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 200"
+                    },
+                    "subject": {
+                        ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 100"
                     },
                     "category": {
                         ".validate": "newData.val().matches(/^(Homework|Project|Exam|Reading|Personal|Research|Presentation|Lab|Group|Assignment|Tutorial|Practice|Review)$/)"
@@ -38,11 +41,26 @@
                     "priority": {
                         ".validate": "newData.val().matches(/^(Low|Medium|High)$/)"
                     },
+                    "dueDate": {
+                        ".validate": "newData.isString()"
+                    },
                     "completed": {
                         ".validate": "newData.isBoolean()"
                     },
+                    "estimated": {
+                        ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 1 && newData.val() <= 1440)"
+                    },
                     "notes": {
                         ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 500)"
+                    },
+                    "createdAt": {
+                        ".validate": "!newData.exists() || newData.isNumber()"
+                    },
+                    "completedAt": {
+                        ".validate": "!newData.exists() || newData.isNumber() || newData.val() == null"
+                    },
+                    "updatedAt": {
+                        ".validate": "!newData.exists() || newData.isNumber()"
                     }
                 }
             }
@@ -53,6 +71,9 @@
                 ".write": "auth != null && auth.uid == $uid",
                 "$gradeId": {
                     ".validate": "newData.hasChildren(['subject', 'score', 'credits', 'type'])",
+                    "subject": {
+                        ".validate": "newData.isString() && newData.val().length <= 100"
+                    },
                     "score": {
                         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
                     },
@@ -61,6 +82,9 @@
                     },
                     "type": {
                         ".validate": "newData.val().matches(/^(Exam|Quiz|Assignment|Project)$/)"
+                    },
+                    "createdAt": {
+                        ".validate": "!newData.exists() || newData.isNumber()"
                     }
                 }
             }
@@ -70,14 +94,21 @@
                 ".read": "auth != null && auth.uid == $uid",
                 ".write": "auth != null && auth.uid == $uid",
                 "$noteId": {
+                    ".validate": "newData.hasChildren(['title', 'content', 'color'])",
                     "title": {
                         ".validate": "newData.isString() && newData.val().length <= 100"
                     },
                     "content": {
                         ".validate": "newData.isString() && newData.val().length <= 5000"
                     },
+                    "tags": {
+                        ".validate": "!newData.exists() || newData.hasChildren()"
+                    },
                     "color": {
-                        ".validate": "newData.val().matches(/^#(?:[0-9a-fA-F]{3}){1,2}$/)"
+                        ".validate": "newData.val().matches(/^[1-5]$/)"
+                    },
+                    "createdAt": {
+                        ".validate": "!newData.exists() || newData.isNumber()"
                     }
                 }
             }
@@ -86,8 +117,17 @@
             "$uid": {
                 ".read": "auth != null && auth.uid == $uid",
                 ".write": "auth != null && auth.uid == $uid",
+                "today": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "weekly": {
+                    ".validate": "newData.hasChildren()"
+                },
                 "streak": {
                     ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "streakUpdatedToday": {
+                    ".validate": "newData.isBoolean()"
                 },
                 "maxDailyStudy": {
                     ".validate": "newData.isNumber()"
@@ -96,7 +136,13 @@
                     ".validate": "newData.isNumber()"
                 },
                 "lastStudyDate": {
-                    ".validate": "newData.isString()"
+                    ".validate": "newData.isString() || newData.val() == null"
+                },
+                "earlyBird": {
+                    ".validate": "newData.isBoolean()"
+                },
+                "nightOwl": {
+                    ".validate": "newData.isBoolean()"
                 }
             }
         },
@@ -109,22 +155,37 @@
                 },
                 "totalPomos": {
                     ".validate": "newData.isNumber()"
+                },
+                "totalMinutes": {
+                    ".validate": "newData.isNumber()"
+                },
+                "lastSession": {
+                    ".validate": "newData.isNumber()"
                 }
             }
         },
         "achievements": {
             "$uid": {
                 ".read": "auth != null && auth.uid == $uid",
-                ".write": "auth != null && auth.uid == $uid",
-                "$achievementId": {
-                    ".validate": "newData.isBoolean()"
-                }
+                ".write": "auth != null && auth.uid == $uid"
             }
         },
         "settings": {
             "$uid": {
                 ".read": "auth != null && auth.uid == $uid",
                 ".write": "auth != null && auth.uid == $uid",
+                "focus": {
+                    ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 120"
+                },
+                "shortBreak": {
+                    ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 60"
+                },
+                "longBreak": {
+                    ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 60"
+                },
+                "dailyGoal": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0.5 && newData.val() <= 24"
+                },
                 "focusTime": {
                     ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 120"
                 },
