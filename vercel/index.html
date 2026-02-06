@@ -2139,9 +2139,14 @@
   <div id="music-player" class="music-player hidden">
     <div class="music-player-header">
       <i class="fas fa-music"></i> Focus Music
-      <button id="close-music" class="music-btn">
-        <i class="fas fa-times"></i>
-      </button>
+      <div style="margin-left: auto; display: flex; gap: 5px;">
+        <button id="music-pip-btn" class="music-btn" title="Pop out player">
+          <i class="fas fa-external-link-alt"></i>
+        </button>
+        <button id="close-music" class="music-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
     </div>
     <div class="music-player-content">
       <div class="now-playing">
@@ -2480,9 +2485,14 @@
       <div id="section-pomodoro" class="section-content hidden">
         <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr">
           <div class="pomodoro-container">
-            <h3 style="text-align: center; margin-bottom: 1.5rem">
-              <i class="fas fa-stopwatch"></i> Pomodoro Timer
-            </h3>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 1.5rem">
+              <h3 style="margin: 0">
+                <i class="fas fa-stopwatch"></i> Pomodoro Timer
+              </h3>
+              <button id="pomodoro-pip-btn" class="btn-icon" title="Pop out timer">
+                <i class="fas fa-external-link-alt"></i>
+              </button>
+            </div>
 
             <div class="timer-mode-tabs">
               <button class="mode-tab active" data-mode="work">Focus</button>
@@ -2881,7 +2891,7 @@
     // =============================================
     // 🔥 FIREBASE CONFIGURATION
     // =============================================
-   const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyBPpm5ttvLnQ9CcbvlSmd0DrKyxtmlEJJA",
   authDomain: "student-task-app-4d0ef.firebaseapp.com",
   databaseURL: "https://student-task-app-4d0ef-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -5084,6 +5094,8 @@
       return `${min}:${sec < 10 ? "0" : ""}${sec}`;
     }
 
+
+
     // Toggle music player visibility
     function toggleMusicPlayer() {
       if (musicPlayer.classList.contains("hidden")) {
@@ -5093,8 +5105,95 @@
       }
     }
 
+    // Floating Music Player (PiP)
+    async function toggleMusicPip() {
+      if (!("documentPictureInPicture" in window)) {
+        showToast("PiP not supported in this browser", "error");
+        return;
+      }
+
+      if (window.documentPictureInPicture.window) {
+        // If any PiP window is open, close it (simplification: assume single PiP context for now or just close it)
+        // Note: The API only supports one PiP window at a time per tab usually.
+        window.documentPictureInPicture.window.close();
+        return;
+      }
+
+      try {
+        const pipWin = await window.documentPictureInPicture.requestWindow({
+          width: 340,
+          height: 400,
+        });
+
+        // Copy styles
+        [...document.styleSheets].forEach((styleSheet) => {
+          try {
+            const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join("");
+            const style = document.createElement("style");
+            style.textContent = cssRules;
+            pipWin.document.head.appendChild(style);
+          } catch (e) {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.type = styleSheet.type;
+            link.media = styleSheet.media;
+            link.href = styleSheet.href;
+            pipWin.document.head.appendChild(link);
+          }
+        });
+
+        // Move Music Player to new window
+        const player = document.getElementById("music-player");
+        const originalParent = player.parentNode;
+
+        // Adjust styles for PiP
+        player.classList.remove("hidden");
+        player.style.position = "static"; // Reset fixed position
+        player.style.width = "100%";
+        player.style.height = "100vh"; // Full height of PiP window
+        player.style.border = "none";
+        player.style.borderRadius = "0";
+
+        pipWin.document.body.appendChild(player);
+
+        // Handle close
+        pipWin.addEventListener("pagehide", () => {
+          // Restore styles
+          player.style.position = "";
+          player.style.width = "";
+          player.style.height = "";
+          player.style.border = "";
+          player.style.borderRadius = "";
+          player.classList.add("hidden"); // Optional: hide on return or keep open? Let's hide to mimic close. 
+          // Actually, let's check if it was playing. If playing, maybe keep it visible? 
+          // For now, prompt user logic: restore to original parent.
+          originalParent.appendChild(player);
+
+          // If it was supposed to be hidden before, we rely on classList. 
+          // But toggleMusicPlayer modifies classList. 
+          // Let's ensure it's hidden if the user closed the window.
+          player.classList.add("hidden");
+        });
+
+      } catch (error) {
+        console.error("Failed to open Music PiP:", error);
+        showToast("Failed to open floating player", "error");
+      }
+    }
+
     // Initialize music player when DOM is loaded
-    document.addEventListener("DOMContentLoaded", initMusicPlayer);
+    document.addEventListener("DOMContentLoaded", () => {
+      initMusicPlayer();
+      const pipBtn = document.getElementById("music-pip-btn");
+      if (pipBtn) {
+        pipBtn.addEventListener("click", toggleMusicPip);
+      }
+
+      const pomoPipBtn = document.getElementById("pomodoro-pip-btn");
+      if (pomoPipBtn) {
+        pomoPipBtn.addEventListener("click", () => togglePipWindow('pomodoro'));
+      }
+    });
 
     // =============================================
     // 🔔 DESKTOP NOTIFICATIONS
