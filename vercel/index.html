@@ -5190,11 +5190,11 @@
 
       // Handle loading errors
       audioPlayer.onerror = function (e) {
-        console.error("Error loading audio:", e);
-        showToast(
-          "Error loading music track. Please try another track.",
-          "error",
-        );
+        console.error("Error loading audio:", e.type); // Log it
+        // Only show toast if player is visible or playing
+        if (!musicPlayer.classList.contains("hidden") || !audioPlayer.paused) {
+          showToast("Error loading music track. Please try another track.", "error");
+        }
       };
 
       highlightActiveTrack(index);
@@ -5394,6 +5394,58 @@
       } catch (error) {
         console.error("Failed to open Music PiP:", error);
         showToast("Failed to open floating player", "error");
+      }
+    }
+    // Toggle Music Player PiP
+    async function toggleMusicPip() {
+      // Check if API is supported
+      if (!('documentPictureInPicture' in window)) {
+        showToast("PiP not supported in this browser", "error");
+        return;
+      }
+
+      // If already open, close it (this check depends on tracking state, or just check window object)
+      // We can check if the music player is already in a pip window
+      // But simpler is to allow toggling based on a flag or just request new
+
+      try {
+        const playerWindow = await window.documentPictureInPicture.requestWindow({
+          width: 300,
+          height: 400,
+        });
+
+        // Copy styles
+        [...document.styleSheets].forEach((styleSheet) => {
+          try {
+            const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+            const style = document.createElement('style');
+            style.textContent = cssRules;
+            playerWindow.document.head.appendChild(style);
+          } catch (e) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.type = styleSheet.type;
+            link.media = styleSheet.media;
+            link.href = styleSheet.href;
+            playerWindow.document.head.appendChild(link);
+          }
+        });
+
+        const playerElement = document.getElementById('music-player');
+        // Make sure it's visible
+        playerElement.classList.remove('hidden');
+        playerWindow.document.body.appendChild(playerElement);
+
+        // Handle close
+        playerWindow.addEventListener('pagehide', (event) => {
+          document.body.appendChild(playerElement);
+          playerElement.classList.add('hidden'); // Hide by default on return? Or keep open?
+          // User likely wants it hidden if they closed the pip window
+        });
+
+      } catch (error) {
+        console.error("Failed to enter Music PiP:", error);
+        showToast("Failed to open floating music player", "error");
       }
     }
 
