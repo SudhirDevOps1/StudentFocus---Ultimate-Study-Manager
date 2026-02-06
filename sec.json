@@ -1,0 +1,144 @@
+{
+    "rules": {
+        "users": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                ".validate": "newData.hasChildren(['name', 'email'])",
+                "name": {
+                    ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+                },
+                "email": {
+                    ".validate": "newData.isString() && newData.val().matches(/^[^@]+@[^@]+\\.[^@]+$/)"
+                },
+                "createdAt": {
+                    ".validate": "newData.isNumber()"
+                }
+            }
+        },
+        "tasks": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                ".indexOn": [
+                    "completed",
+                    "dueDate",
+                    "priority",
+                    "category",
+                    "createdAt"
+                ],
+                "$taskId": {
+                    ".validate": "newData.hasChildren(['title', 'subject', 'category', 'priority', 'dueDate', 'completed'])",
+                    "title": {
+                        ".validate": "newData.isString() && newData.val().length <= 200"
+                    },
+                    "category": {
+                        ".validate": "newData.val().matches(/^(Homework|Project|Exam|Reading|Personal|Research|Presentation|Lab|Group|Assignment|Tutorial|Practice|Review)$/)"
+                    },
+                    "priority": {
+                        ".validate": "newData.val().matches(/^(Low|Medium|High)$/)"
+                    },
+                    "completed": {
+                        ".validate": "newData.isBoolean()"
+                    },
+                    "notes": {
+                        ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 500)"
+                    }
+                }
+            }
+        },
+        "grades": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                "$gradeId": {
+                    ".validate": "newData.hasChildren(['subject', 'score', 'credits', 'type'])",
+                    "score": {
+                        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+                    },
+                    "credits": {
+                        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+                    },
+                    "type": {
+                        ".validate": "newData.val().matches(/^(Exam|Quiz|Assignment|Project)$/)"
+                    }
+                }
+            }
+        },
+        "notes": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                "$noteId": {
+                    "title": {
+                        ".validate": "newData.isString() && newData.val().length <= 100"
+                    },
+                    "content": {
+                        ".validate": "newData.isString() && newData.val().length <= 5000"
+                    },
+                    "color": {
+                        ".validate": "newData.val().matches(/^#(?:[0-9a-fA-F]{3}){1,2}$/)"
+                    }
+                }
+            }
+        },
+        "studyData": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                "streak": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "maxDailyStudy": {
+                    ".validate": "newData.isNumber()"
+                },
+                "totalMinutes": {
+                    ".validate": "newData.isNumber()"
+                },
+                "lastStudyDate": {
+                    ".validate": "newData.isString()"
+                }
+            }
+        },
+        "pomodoroStats": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                "todayCount": {
+                    ".validate": "newData.isNumber()"
+                },
+                "totalPomos": {
+                    ".validate": "newData.isNumber()"
+                }
+            }
+        },
+        "achievements": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                "$achievementId": {
+                    ".validate": "newData.isBoolean()"
+                }
+            }
+        },
+        "settings": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                "focusTime": {
+                    ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 120"
+                },
+                "musicEnabled": {
+                    ".validate": "newData.isBoolean()"
+                },
+                "notificationsEnabled": {
+                    ".validate": "newData.isBoolean()"
+                }
+            }
+        },
+        "$other": {
+            ".read": false,
+            ".write": false
+        }
+    }
+}
