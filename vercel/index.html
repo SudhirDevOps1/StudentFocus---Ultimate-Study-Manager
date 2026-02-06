@@ -4927,10 +4927,80 @@
         pipPomodoro.style.display = "block";
         // Update title if in DOM-based PiP
         if (pipTitle) pipTitle.textContent = "Pomodoro Timer";
-        updatePipTimerDisplay();
-        // Also show tasks below timer in pomodoro mode if user wants?
-        // For now, let's keep them separate but allow easy toggling
+        renderPipTimer();
       }
+    }
+
+    // Render full timer UI in PiP
+    function renderPipTimer() {
+      if (!pipPomodoro) return;
+
+      const mins = Math.floor(pomodoroSeconds / 60);
+      const secs = pomodoroSeconds % 60;
+      const display = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+
+      const streak = (typeof studyData !== 'undefined' && studyData.streak) || 0;
+
+      pipPomodoro.innerHTML = `
+        <div class="timer-mode-tabs" style="transform: scale(0.9); margin-bottom: 12px; display: flex; justify-content: center; gap: 8px;">
+          <button class="pip-mode-tab ${pomodoroMode === "work" ? "active" : ""}" data-mode="work" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; border: none; background: ${pomodoroMode === "work" ? "var(--primary)" : "var(--bg)"}; color: ${pomodoroMode === "work" ? "white" : "var(--text-light)"}; font-weight: 600; cursor: pointer; transition: all 0.2s;">Focus</button>
+          <button class="pip-mode-tab ${pomodoroMode === "short" ? "active" : ""}" data-mode="short" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; border: none; background: ${pomodoroMode === "short" ? "var(--primary)" : "var(--bg)"}; color: ${pomodoroMode === "short" ? "white" : "var(--text-light)"}; font-weight: 600; cursor: pointer; transition: all 0.2s;">Short Break</button>
+          <button class="pip-mode-tab ${pomodoroMode === "long" ? "active" : ""}" data-mode="long" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; border: none; background: ${pomodoroMode === "long" ? "var(--primary)" : "var(--bg)"}; color: ${pomodoroMode === "long" ? "white" : "var(--text-light)"}; font-weight: 600; cursor: pointer; transition: all 0.2s;">Long Break</button>
+        </div>
+
+        <div class="pip-timer-hero" style="text-align:center; padding: 30px 10px; background: var(--gradient); border-radius: 25px; margin-bottom: 20px; box-shadow: var(--shadow-lg); color: white; position: relative; overflow: hidden;">
+          <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px; font-weight: 700;">
+            ${pomodoroMode === "work" ? "Focus Time" : pomodoroMode === "short" ? "Short Break" : "Long Break"}
+          </div>
+          <div id="pip-large-timer" style="font-size: 4.5rem; font-weight: 900; font-family: 'Inter', sans-serif; letter-spacing: -3px; line-height: 1; margin: 10px 0;">${display}</div>
+          ${typeof hardModeEnabled !== 'undefined' && hardModeEnabled ? '<div style="margin-top:12px; font-size: 0.75rem; background: rgba(0,0,0,0.25); padding: 6px 12px; border-radius: 20px; display: inline-block; font-weight: 600;"><i class="fas fa-lock"></i> HARD MODE ON</div>' : ""}
+        </div>
+
+        <div class="pomodoro-stats" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; background: var(--card-bg); padding: 15px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+          <div class="pomo-stat" style="text-align: center;">
+            <span style="display: block; font-size: 1.4rem; font-weight: 800; color: var(--primary);">${todayPomodoros}</span>
+            <small style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase; font-weight: 700;">Sessions Today</small>
+          </div>
+          <div class="pomo-stat" style="text-align: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border);">
+            <span style="display: block; font-size: 1.4rem; font-weight: 800; color: var(--primary);">${Math.floor(totalFocusMinutes / 60)}h</span>
+            <small style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase; font-weight: 700;">Focus Time</small>
+          </div>
+          <div class="pomo-stat" style="text-align: center;">
+            <span style="display: block; font-size: 1.4rem; font-weight: 800; color: var(--primary);">${streak}</span>
+            <small style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase; font-weight: 700;">Best Streak</small>
+          </div>
+        </div>
+
+        <div class="pip-controls-bottom" style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
+          <button id="pip-reset" class="btn-icon" style="width: 50px; height: 50px; border-radius: 50%; background: var(--bg); color: var(--text); border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s;">
+            <i class="fas fa-redo"></i>
+          </button>
+          <button id="pip-start-stop" class="btn-icon" style="width: 65px; height: 65px; border-radius: 50%; background: var(--gradient); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.2s;">
+            <i class="fas ${pomodoroRunning ? "fa-pause" : "fa-play"}"></i>
+          </button>
+          <button id="pip-skip" class="btn-icon" style="width: 50px; height: 50px; border-radius: 50%; background: var(--bg); color: var(--text); border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s;">
+            <i class="fas fa-forward"></i>
+          </button>
+        </div>
+      `;
+
+      // Re-attach event listeners
+      const startBtn = pipPomodoro.querySelector("#pip-start-stop");
+      const resetBtn = pipPomodoro.querySelector("#pip-reset");
+      const skipBtn = pipPomodoro.querySelector("#pip-skip");
+
+      if (startBtn) startBtn.onclick = togglePomodoro;
+      if (resetBtn) resetBtn.onclick = resetPomodoro;
+      if (skipBtn) skipBtn.onclick = skipPomodoro;
+
+      // Mode tabs listeners
+      pipPomodoro.querySelectorAll(".pip-mode-tab").forEach(tab => {
+        tab.onclick = (e) => {
+          pomodoroMode = e.target.dataset.mode;
+          resetPomodoro();
+          renderPipTimer(); // Re-render to update active state of tabs
+        };
+      });
     }
 
     // Render tasks in PiP window
@@ -4993,6 +5063,11 @@
 
       if (pipTimer) {
         pipTimer.textContent = display;
+      }
+
+      const largeTimer = pipPomodoro ? pipPomodoro.querySelector("#pip-large-timer") : null;
+      if (largeTimer) {
+        largeTimer.textContent = display;
       }
 
       // Also update mini timer in task view if present
