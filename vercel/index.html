@@ -2914,7 +2914,6 @@
     // 🔥 FIREBASE CONFIGURATION
     // =============================================
     const firebaseConfig = {
-      const firebaseConfig = {
   apiKey: "AIzaSyBPpm5ttvLnQ9CcbvlSmd0DrKyxtmlEJJA",
   authDomain: "student-task-app-4d0ef.firebaseapp.com",
   databaseURL: "https://student-task-app-4d0ef-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -4977,7 +4976,7 @@
         urgentTasks
           .map(
             (task) => `
-        <div class="pip-task-item" onclick="openEditTask('${task.id}')">
+        <div class="pip-task-item" onclick="editTask('${task.id}')">
           <div class="pip-task-title">${task.title}</div>
           <div class="pip-task-due">Due: ${formatDate(new Date(task.dueDate))}</div>
         </div>
@@ -6035,6 +6034,10 @@
       // For now, trust the tabs but maybe log basic stats
       console.log("App initialized. Ready.");
     });
+
+    function formatDate(date) {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
 
     document.addEventListener("DOMContentLoaded", addHardModeToggle);
   </script>
